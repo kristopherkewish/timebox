@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Timebox v2 — App Design</title>
+<link rel="stylesheet" href="styles/tokens.css" />
+<link rel="stylesheet" href="styles/app.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #EDEDE9; }
+  body { font-family: 'Geist', system-ui, sans-serif; color: #161513; }
+  #app { width: 100vw; height: 100vh; }
+
+  /* Design system overview card */
+  .ds-card {
+    background: white; border-radius: 14px; padding: 28px 32px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    height: 100%; overflow: auto;
+  }
+  .ds-eyebrow {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: #7A776F; font-weight: 500; margin-bottom: 8px;
+  }
+  .ds-title {
+    font-size: 26px; line-height: 1.1; color: #161513;
+    margin: 0 0 6px; font-weight: 600; letter-spacing: -0.02em;
+  }
+  .ds-sub { font-size: 13px; color: #44423E; margin-bottom: 24px; line-height: 1.55; max-width: 70ch; }
+  .ds-section { margin-bottom: 28px; }
+  .ds-row { display: flex; gap: 18px; flex-wrap: wrap; }
+  .swatch { display: flex; flex-direction: column; gap: 4px; }
+  .swatch-chip { width: 56px; height: 56px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06); }
+  .swatch-name { font-size: 11px; color: #161513; font-weight: 500; }
+  .swatch-val { font-size: 10px; color: #B0ADA4; font-family: 'Geist Mono', monospace; }
+  .accent-chip {
+    width: 36px; height: 36px; border-radius: 999px;
+    border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  }
+  .accent-row { display: flex; gap: 10px; }
+  .type-spec { font-size: 10.5px; color: #7A776F; font-family: 'Geist Mono', monospace; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="components/shell.jsx"></script>
+<script type="text/babel" src="components/daily.jsx"></script>
+<script type="text/babel" src="components/planners.jsx"></script>
+<script type="text/babel" src="components/sample-data.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "accent": "orange"
+}/*EDITMODE-END*/;
+
+/* ---------- Themed wrapper ---------- */
+function Themed({ theme = "light", accent = "orange", children }) {
+  return (
+    <div className="tb-app" data-theme={theme} data-accent={accent} style={{width: "100%", height: "100%"}}>
+      {children}
+    </div>
+  );
+}
+
+/* ---------- Hero: full daily, mid-day ---------- */
+function HeroDay({ theme, accent }) {
+  return (
+    <Themed theme={theme} accent={accent}>
+      <WinFrame>
+        <div className="tb-shell">
+          <Rail active="day" initials="MK"/>
+          <div className="tb-main">
+            <Header
+              eyebrow="Monday"
+              title="May 4, 2026"
+              sub="Week 19 · 11 timeboxes planned · 3h 25m of deep work"
+              dateLabel="Mon, May 4"
+              view="day"
+            />
+            <DailyView
+              tasks={window.HERO_TASKS}
+              blocks={window.HERO_BLOCKS}
+              layout="left"
+              dayStart={6*60} dayEnd={20*60}
+              nowTime={11*60 + 24}
+              hourPx={96}
+              showDrag={true}
+              showStats={true}
+            />
+          </div>
+        </div>
+      </WinFrame>
+    </Themed>
+  );
+}
+
+/* ---------- Compact daily for theme variations ---------- */
+function CompactDay({ theme, accent }) {
+  return (
+    <Themed theme={theme} accent={accent}>
+      <WinFrame>
+        <div className="tb-shell">
+          <Rail active="day" initials="MK"/>
+          <div className="tb-main">
+            <Header eyebrow="Monday" title="May 4, 2026"
+              dateLabel="Mon, May 4" view="day"/>
+            <DailyView
+              tasks={window.SIMPLE_TASKS}
+              blocks={window.SIMPLE_BLOCKS}
+              layout="left"
+              dayStart={7*60} dayEnd={19*60}
+              nowTime={11*60+24} hourPx={88}
+              showDrag={false}
+              showStats={true}
+            />
+          </div>
+        </div>
+      </WinFrame>
+    </Themed>
+  );
+}
+
+/* ---------- Weekly artboard ---------- */
+function WeekArtboard({ theme, accent }) {
+  return (
+    <Themed theme={theme} accent={accent}>
+      <WinFrame>
+        <div className="tb-shell">
+          <Rail active="week" initials="MK"/>
+          <div className="tb-main">
+            <Header eyebrow="Week 19" title="May 4 – May 10"
+              sub="Higher-level intent · independent of the daily view"
+              dateLabel="Week 19" view="week"/>
+            <WeeklyView pool={window.WEEK_POOL} days={window.WEEK_DAYS} todayIdx={0}/>
+          </div>
+        </div>
+      </WinFrame>
+    </Themed>
+  );
+}
+
+/* ---------- Monthly artboard ---------- */
+function MonthArtboard({ theme, accent }) {
+  return (
+    <Themed theme={theme} accent={accent}>
+      <WinFrame>
+        <div className="tb-shell">
+          <Rail active="month" initials="MK"/>
+          <div className="tb-main">
+            <Header eyebrow="May" title="May 2026"
+              sub="One step further out — what should this month produce?"
+              dateLabel="May 2026" view="month"/>
+            <MonthlyView
+              pool={window.MONTH_POOL}
+              weeks={window.MONTH_WEEKS}
+              currentWeekIdx={1}
+            />
+          </div>
+        </div>
+      </WinFrame>
+    </Themed>
+  );
+}
+
+/* ---------- Design system overview ---------- */
+function DesignSystemCard() {
+  const accents = [
+    { id: "orange", val: "#C2410C" },
+    { id: "amber",  val: "#B7791F" },
+    { id: "green",  val: "#4D7C3F" },
+    { id: "teal",   val: "#0F766E" },
+    { id: "blue",   val: "#2563A8" },
+    { id: "indigo", val: "#4F46E5" },
+    { id: "violet", val: "#7C3AED" },
+    { id: "rose",   val: "#BE185D" },
+    { id: "slate",  val: "#475569" },
+  ];
+  const lightTokens = [
+    { name: "ink",     val: "#161513" },
+    { name: "ink-2",   val: "#44423E" },
+    { name: "ink-3",   val: "#7A776F" },
+    { name: "line",    val: "#E6E4DD" },
+    { name: "bg",      val: "#F7F7F5" },
+    { name: "surface", val: "#FFFFFF" },
+    { name: "success", val: "#4D7C3F" },
+    { name: "warn",    val: "#B7791F" },
+  ];
+  const darkTokens = [
+    { name: "ink",     val: "#ECEAE5" },
+    { name: "ink-2",   val: "#C2BFB7" },
+    { name: "ink-3",   val: "#8A877E" },
+    { name: "line",    val: "#2A292E" },
+    { name: "bg",      val: "#131316" },
+    { name: "surface", val: "#1B1B1F" },
+    { name: "success", val: "#8AB874" },
+    { name: "warn",    val: "#D4A24C" },
+  ];
+  return (
+    <div className="ds-card">
+      <div className="ds-eyebrow">Foundations</div>
+      <h2 className="ds-title">Modern, restrained, accent-tweakable</h2>
+      <p className="ds-sub">
+        One sans family — Geist — across the whole product. Two themes (light, dark)
+        and a configurable accent. The accent paints the now-line, the active rail indicator,
+        the in-progress block, the drag-drop ghost, and the app icon — so changing it
+        changes the personality of the app without changing its bones.
+      </p>
+
+      <div className="ds-section">
+        <div className="ds-eyebrow">Type</div>
+        <div style={{display:"flex", gap: 36, alignItems:"baseline", flexWrap:"wrap"}}>
+          <div>
+            <div style={{fontSize: 36, fontWeight: 600, letterSpacing: "-0.02em", lineHeight: 1}}>May 4, 2026</div>
+            <div className="type-spec">Geist 36 / 600 · screen titles</div>
+          </div>
+          <div>
+            <div style={{fontSize: 18, fontWeight: 500}}>Deep work — Onboarding</div>
+            <div className="type-spec">Geist 13 / 500 · UI labels</div>
+          </div>
+          <div>
+            <div style={{fontSize: 13, color: "#44423E"}}>Supporting copy that fills out the row.</div>
+            <div className="type-spec">Geist 13 / 400 · body</div>
+          </div>
+          <div>
+            <div style={{fontFamily: "'Geist Mono', monospace", fontSize: 13, fontVariantNumeric: "tabular-nums"}}>09:00 – 11:00</div>
+            <div className="type-spec">Geist Mono · times</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="ds-section">
+        <div className="ds-eyebrow">Accent presets</div>
+        <div className="accent-row">
+          {accents.map(a => (
+            <div key={a.id} style={{display:"flex", flexDirection:"column", alignItems:"center", gap:6}}>
+              <div className="accent-chip" style={{background: a.val}}/>
+              <div style={{fontSize: 10, color:"#7A776F", textTransform:"capitalize"}}>{a.id}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="ds-section">
+        <div className="ds-eyebrow">Color — Light</div>
+        <div className="ds-row">
+          {lightTokens.map(s => (
+            <div key={s.name} className="swatch">
+              <div className="swatch-chip" style={{background: s.val}}/>
+              <div className="swatch-name">{s.name}</div>
+              <div className="swatch-val">{s.val}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="ds-section">
+        <div className="ds-eyebrow">Color — Dark</div>
+        <div className="ds-row">
+          {darkTokens.map(s => (
+            <div key={s.name} className="swatch">
+              <div className="swatch-chip" style={{background: s.val}}/>
+              <div className="swatch-name">{s.name}</div>
+              <div className="swatch-val">{s.val}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="ds-section">
+        <div className="ds-eyebrow">Block states</div>
+        <div className="tb-app" data-theme="light" data-accent="orange" style={{display:"flex", gap: 16, alignItems:"flex-start", flexWrap:"wrap"}}>
+          {[
+            { title: "Completed", state: "completed" },
+            { title: "In progress", state: "in-progress" },
+            { title: "Upcoming", state: "upcoming" },
+            { title: "Drag ghost", state: "upcoming", ghost: true },
+          ].map((b, i) => (
+            <div key={i} style={{position:"relative", width: 220, height: 80, background: "var(--bg)", borderRadius: 8, padding: 4}}>
+              <div className={`tb-block ${b.state} ${b.ghost?"ghost":""}`} style={{position: "relative", left: 0, right: 0, top: 0, height: 72}}>
+                <div className="tb-block-title">
+                  <span className="tb-check">{b.state === "completed" && <Icon name="check" size={9} stroke={2.5}/>}</span>
+                  <span>{b.title}</span>
+                </div>
+                <div className="tb-block-meta"><span>11:00 – 11:45</span><span>·</span><span>45m</span></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- App ---------- */
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const accents = [
+    { id: "orange", val: "#C2410C" },
+    { id: "amber",  val: "#B7791F" },
+    { id: "green",  val: "#4D7C3F" },
+    { id: "teal",   val: "#0F766E" },
+    { id: "blue",   val: "#2563A8" },
+    { id: "indigo", val: "#4F46E5" },
+    { id: "violet", val: "#7C3AED" },
+    { id: "rose",   val: "#BE185D" },
+    { id: "slate",  val: "#475569" },
+  ];
+
+  return (
+    <>
+      <DesignCanvas title="Timebox" subtitle="Native Windows app — daily, weekly, monthly planning · v2" defaultZoom={0.6}>
+        <DCSection id="ds" title="Design system" subtitle="Sans-only type, Light + Dark themes, configurable accent.">
+          <DCArtboard id="ds-overview" label="Foundations" width={1280} height={920}>
+            <DesignSystemCard/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="hero" title="Hero — daily, mid-day" subtitle="The primary screen. Mid-Monday: morning completed, design review in progress, afternoon planned, a task being dragged onto 2:30. Accent and theme are driven by the Tweaks panel.">
+          <DCArtboard id="hero" label={`Daily · ${tweaks.theme} · ${tweaks.accent}`} width={1440} height={920}>
+            <HeroDay theme={tweaks.theme} accent={tweaks.accent}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="themes" title="Themes" subtitle="Light and Dark, both shown with the default orange accent.">
+          <DCArtboard id="theme-light" label="Light" width={1280} height={840}>
+            <CompactDay theme="light" accent={tweaks.accent}/>
+          </DCArtboard>
+          <DCArtboard id="theme-dark" label="Dark" width={1280} height={840}>
+            <CompactDay theme="dark" accent={tweaks.accent}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="accents" title="Accent presets" subtitle="Same daily screen, four accents. The accent shows up on the now-line, in-progress block, drop ghost, active rail indicator, and the app icon.">
+          <DCArtboard id="accent-orange" label="Orange (default)" width={1100} height={720}>
+            <CompactDay theme="light" accent="orange"/>
+          </DCArtboard>
+          <DCArtboard id="accent-blue" label="Blue" width={1100} height={720}>
+            <CompactDay theme="light" accent="blue"/>
+          </DCArtboard>
+          <DCArtboard id="accent-green" label="Green" width={1100} height={720}>
+            <CompactDay theme="light" accent="green"/>
+          </DCArtboard>
+          <DCArtboard id="accent-violet" label="Violet" width={1100} height={720}>
+            <CompactDay theme="light" accent="violet"/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="weekly" title="Weekly planner" subtitle="Higher-level intent. Tasks have no duration; they live in a week-specific pool and get dragged onto a day-bucket.">
+          <DCArtboard id="weekly" label={`Weekly · ${tweaks.theme}`} width={1440} height={780}>
+            <WeekArtboard theme={tweaks.theme} accent={tweaks.accent}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="monthly" title="Monthly planner" subtitle="A list of weeks — no calendar grid. Each week is its own card with a bucket of tasks. Tasks attach to the week, not specific days.">
+          <DCArtboard id="monthly" label={`Monthly · ${tweaks.theme}`} width={1440} height={920}>
+            <MonthArtboard theme={tweaks.theme} accent={tweaks.accent}/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel>
+        <TweakSection title="Theme">
+          <TweakRadio
+            value={tweaks.theme}
+            onChange={(v) => setTweak("theme", v)}
+            options={[
+              { value: "light", label: "Light" },
+              { value: "dark", label: "Dark" },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title="Accent color">
+          <div style={{display: "flex", flexWrap: "wrap", gap: 8}}>
+            {accents.map(a => (
+              <button
+                key={a.id}
+                onClick={() => setTweak("accent", a.id)}
+                style={{
+                  width: 32, height: 32, borderRadius: 999,
+                  border: tweaks.accent === a.id ? "2px solid #161513" : "2px solid transparent",
+                  background: a.val,
+                  cursor: "pointer",
+                  padding: 0,
+                  outline: "1px solid rgba(0,0,0,0.1)",
+                }}
+                title={a.id}
+              />
+            ))}
+          </div>
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
+</script>
+</body>
+</html>

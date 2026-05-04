@@ -1,0 +1,292 @@
+/* ==========================================================================
+   Timebox — Extensions on top of the verbatim handoff app.css. Web-only
+   surfaces that have no analogue in the design handoff: auth pages, modals,
+   form fields, settings page, dnd ghost.
+   ========================================================================== */
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+body { font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; }
+
+/* ---------- Auth ---------- */
+.auth-page {
+  min-height: 100%;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 30% 20%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 50%),
+    radial-gradient(circle at 80% 80%, color-mix(in oklab, var(--accent) 8%, transparent), transparent 60%),
+    var(--bg);
+  padding: 32px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.auth-mark {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+.auth-mark-icon {
+  width: 18px; height: 18px;
+  background: var(--accent);
+  color: white;
+  border-radius: 4px;
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 11px;
+}
+.auth-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 4px 0 0;
+}
+.auth-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.auth-form {
+  display: flex; flex-direction: column; gap: 14px;
+  margin-top: 4px;
+}
+.auth-field {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.auth-field span {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.auth-field em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--warn);
+}
+.auth-field input,
+.tb-input {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.1s, box-shadow 0.1s;
+}
+.auth-field input:focus,
+.tb-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
+}
+.auth-rules {
+  list-style: none; padding: 0; margin: -4px 0 0;
+  font-size: 11px; color: var(--ink-3);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.auth-rules li::before { content: '○ '; color: var(--ink-4); }
+.auth-rules li.pass { color: var(--success); }
+.auth-rules li.pass::before { content: '✓ '; color: var(--success); }
+.auth-check {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--ink-2);
+  cursor: pointer;
+}
+.auth-check input { width: 14px; height: 14px; accent-color: var(--accent); }
+.auth-error {
+  background: color-mix(in oklab, var(--warn) 14%, transparent);
+  color: var(--ink);
+  border: 1px solid color-mix(in oklab, var(--warn) 35%, transparent);
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+.auth-form .tb-btn { justify-content: center; height: 38px; cursor: pointer; }
+.auth-footer {
+  font-size: 12px;
+  color: var(--ink-3);
+  text-align: center;
+}
+.auth-footer a { color: var(--accent-ink); font-weight: 500; }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklab, var(--ink) 35%, transparent);
+  display: grid; place-items: center;
+  z-index: 50;
+  padding: 32px;
+}
+.modal-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 22px 24px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.modal-title {
+  font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+  margin: 0;
+}
+.modal-sub {
+  font-size: 12.5px; color: var(--ink-3); margin: 0;
+}
+.modal-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;
+}
+.modal-actions .tb-btn { cursor: pointer; }
+.tb-btn.danger { background: var(--warn); color: white; border-color: var(--warn); }
+
+/* Cursor restoration: app.css uses cursor: default on buttons (Windows feel).
+   For interactive web buttons we want pointer. */
+.tb-btn, .tb-rail-item, .tb-rail-avatar, .tb-segmented button,
+.tb-date-step button, .tb-inbox-card, .tb-block, .tb-week-card, .tb-month-week-card,
+.tb-inbox-add { cursor: pointer; }
+
+/* ---------- Settings ---------- */
+.settings-wrap {
+  padding: 24px 32px 64px;
+  display: flex; flex-direction: column; gap: 28px;
+  max-width: 720px;
+  overflow: auto;
+}
+.settings-section {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.settings-section h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin: 0;
+}
+.settings-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  padding: 12px 0;
+  align-items: center;
+  border-top: 1px solid var(--line);
+}
+.settings-row:first-of-type { border-top: 0; }
+.settings-row .label { font-size: 13px; color: var(--ink); font-weight: 500; }
+.settings-row .desc { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+.settings-row .control { justify-self: end; }
+.settings-select {
+  height: 32px; padding: 0 8px; border-radius: 8px;
+  border: 1px solid var(--line-2); background: var(--surface);
+  color: var(--ink); font: inherit; font-size: 12.5px;
+}
+.toggle {
+  position: relative; width: 36px; height: 20px;
+  background: var(--surface-sunken); border-radius: 999px;
+  border: 1px solid var(--line-2);
+  cursor: pointer; transition: background 0.1s;
+}
+.toggle::after {
+  content: ''; position: absolute; top: 1px; left: 1px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: white; box-shadow: var(--shadow-sm);
+  transition: transform 0.1s;
+}
+.toggle.on { background: var(--accent); border-color: var(--accent); }
+.toggle.on::after { transform: translateX(16px); }
+.accent-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.accent-chip {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line-2);
+  cursor: pointer;
+  padding: 0;
+  background: var(--accent);
+}
+.accent-chip[aria-pressed="true"] {
+  border-color: var(--ink);
+}
+
+/* ---------- Daily timeline overlay element (drag preview) ---------- */
+.tb-block.is-source-while-dragging { opacity: 0.4; }
+.tb-block.conflict, .tb-block.ghost.conflict {
+  border-color: var(--warn);
+  border-left-color: var(--warn);
+  background: color-mix(in oklab, var(--warn) 12%, var(--surface));
+}
+.tb-block.ghost.conflict { background: color-mix(in oklab, var(--warn) 22%, transparent); }
+
+/* ---------- Notes flyout ---------- */
+.notes-flyout-title {
+  font-size: 14px; font-weight: 600; margin: 0;
+}
+.notes-meta {
+  font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums;
+}
+.notes-flyout textarea {
+  min-height: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-2);
+  background: var(--surface); color: var(--ink);
+  border-radius: 8px;
+  font: inherit; font-size: 13px;
+  resize: vertical;
+}
+
+/* ---------- Filter chip used in stats strip ---------- */
+.tb-filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--ink-3);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.tb-filter-chip .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--now);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--now) 25%, transparent);
+}
+
+/* ---------- Inline header secondary text emphasis (used by sub) ---------- */
+.tb-header-sub.warn { color: var(--warn); }
+
+/* ---------- Empty / error states ---------- */
+.empty-message {
+  padding: 24px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+/* ---------- Focus outlines visible across themes ---------- */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.tb-block:focus-visible,
+.tb-week-card:focus-visible,
+.tb-month-week-card:focus-visible {
+  outline-offset: 1px;
+}

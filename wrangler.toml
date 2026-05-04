@@ -1,0 +1,14 @@
+name = "timebox"
+compatibility_date = "2025-04-01"
+pages_build_output_dir = "dist"
+
+# D1 binding. To create the database, run:
+#   wrangler d1 create timebox-db
+# Then paste the returned database_id below. Until that is set, Functions that
+# touch the DB will fail at runtime, but the Phase 1 stub endpoints (which
+# return hardcoded data) work without a real DB.
+[[d1_databases]]
+binding = "DB"
+database_name = "timebox-db"
+database_id = "REPLACE_WITH_DB_ID_FROM_WRANGLER"
+migrations_dir = "migrations"
