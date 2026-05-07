@@ -10,5 +10,5 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "timebox-db"
-database_id = "REPLACE_WITH_DB_ID_FROM_WRANGLER"
+database_id = "c23fa4a6-ab32-4acb-8c04-4c0d98c38d20"
 migrations_dir = "migrations"
