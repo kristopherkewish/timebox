@@ -259,27 +259,31 @@ $issueBody
 When the PR is open, print its URL on its own line as the final output.
 "@
 
-        $promptFile = Join-Path $env:TEMP "timebox-issue-$num-$([guid]::NewGuid().ToString('N')).txt"
-        Set-Content -Path $promptFile -Value $prompt -Encoding UTF8
-
         # Pre-assign a session ID so the conversation can be resumed later
         # via `claude --resume <id>` for follow-up work on the PR.
         $sessionId   = [guid]::NewGuid().ToString()
         $sessionName = "issue-$num"
 
         Write-Step "Invoking Claude (model=$Model effort=$Effort session=$sessionId)"
+
+        # stream-json + verbose + Tee-Object: matches the proven automation
+        # pattern from ZyzzAi/run_claude.ps1. Default text output mode buffers
+        # and on Windows can leave the stdout pipe open after Claude finishes
+        # the visible response, which causes the script to hang indefinitely.
+        $streamLog = Join-Path $env:TEMP "timebox-issue-$num-stream.jsonl"
         try {
-            # Stream Claude's output live so the user can watch progress.
-            Get-Content $promptFile -Raw | & claude `
+            $prompt | & claude `
                 --model $Model `
                 --effort $Effort `
                 --permission-mode bypassPermissions `
                 --session-id $sessionId `
                 --name $sessionName `
-                --print
+                --output-format stream-json `
+                --verbose `
+                -p 2>&1 | Tee-Object -FilePath $streamLog
             $claudeExit = $LASTEXITCODE
         } finally {
-            Remove-Item $promptFile -ErrorAction SilentlyContinue
+            Remove-Item $streamLog -ErrorAction SilentlyContinue
         }
 
         if ($claudeExit -ne 0) {
