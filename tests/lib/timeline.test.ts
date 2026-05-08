@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectConflict, snapToIncrement } from '@/lib/timeline';
+import { detectConflict, layoutColumns, snapToIncrement } from '@/lib/timeline';
 
 describe('snapToIncrement', () => {
   it('rounds to the nearest increment', () => {
@@ -44,5 +44,69 @@ describe('detectConflict', () => {
 
   it('ignores inbox blocks', () => {
     expect(detectConflict(blocks, 14 * 60, 30)).toBe(false);
+  });
+});
+
+describe('layoutColumns', () => {
+  it('places non-overlapping blocks in a single full-width column', () => {
+    const layout = layoutColumns([
+      { id: 'a', startMin: 9 * 60, durationMin: 60 },
+      { id: 'b', startMin: 11 * 60, durationMin: 30 },
+    ]);
+    expect(layout.a).toEqual({ column: 0, cols: 1 });
+    expect(layout.b).toEqual({ column: 0, cols: 1 });
+  });
+
+  it('splits two parallel blocks into side-by-side columns', () => {
+    const layout = layoutColumns([
+      { id: 'a', startMin: 9 * 60, durationMin: 60 },
+      { id: 'b', startMin: 9 * 60 + 15, durationMin: 60 },
+    ]);
+    expect(layout.a).toEqual({ column: 0, cols: 2 });
+    expect(layout.b).toEqual({ column: 1, cols: 2 });
+  });
+
+  it('splits three parallel blocks into three columns', () => {
+    const layout = layoutColumns([
+      { id: 'a', startMin: 9 * 60, durationMin: 60 },
+      { id: 'b', startMin: 9 * 60 + 10, durationMin: 60 },
+      { id: 'c', startMin: 9 * 60 + 20, durationMin: 60 },
+    ]);
+    expect(layout.a.cols).toBe(3);
+    expect(layout.b.cols).toBe(3);
+    expect(layout.c.cols).toBe(3);
+    const usedColumns = new Set([layout.a.column, layout.b.column, layout.c.column]);
+    expect(usedColumns).toEqual(new Set([0, 1, 2]));
+  });
+
+  it('reuses freed columns within a transitively-connected cluster', () => {
+    // A 9–10, B 9:30–10:30, C 10:15–11. A and C never overlap, but B bridges
+    // them so all three share one cluster. C should reclaim A's freed column.
+    const layout = layoutColumns([
+      { id: 'a', startMin: 9 * 60, durationMin: 60 },
+      { id: 'b', startMin: 9 * 60 + 30, durationMin: 60 },
+      { id: 'c', startMin: 10 * 60 + 15, durationMin: 45 },
+    ]);
+    expect(layout.a).toEqual({ column: 0, cols: 2 });
+    expect(layout.b).toEqual({ column: 1, cols: 2 });
+    expect(layout.c).toEqual({ column: 0, cols: 2 });
+  });
+
+  it('treats edge-touching blocks as not overlapping', () => {
+    const layout = layoutColumns([
+      { id: 'a', startMin: 9 * 60, durationMin: 60 },
+      { id: 'b', startMin: 10 * 60, durationMin: 30 },
+    ]);
+    expect(layout.a).toEqual({ column: 0, cols: 1 });
+    expect(layout.b).toEqual({ column: 0, cols: 1 });
+  });
+
+  it('skips inbox blocks (startMin === null)', () => {
+    const layout = layoutColumns([
+      { id: 'a', startMin: 9 * 60, durationMin: 60 },
+      { id: 'inbox', startMin: null, durationMin: 30 },
+    ]);
+    expect(layout.a).toEqual({ column: 0, cols: 1 });
+    expect(layout.inbox).toBeUndefined();
   });
 });
