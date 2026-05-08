@@ -1,10 +1,11 @@
+import { useContext } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { Icon } from '@/components/icons/Icon';
 import { fmtDur, fmtTime } from '@/lib/time';
 import { minutesToPx } from '@/lib/timeline';
 import type { BlockState } from '@/lib/completion';
 import type { Timebox } from '@/hooks/useDaily';
+import { DragOffsetContext } from './DailyView';
 
 interface Props {
   block: Timebox;
@@ -32,7 +33,7 @@ export function Block({
   const top = minutesToPx(block.startMin ?? dayStart, dayStart, hourPx);
   const height = (block.durationMin / 60) * hourPx;
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: block.id,
     data: { kind: 'timebox-move', block },
   });
@@ -46,6 +47,12 @@ export function Block({
     data: { kind: 'timebox-resize-top', block },
   });
 
+  // We deliberately ignore @dnd-kit's `transform` here. Inside a scrolled
+  // overflow container the transform path drifts; DailyView tracks the raw
+  // cursor + scroll delta and exposes it via DragOffsetContext (#2).
+  const { activeId, dy } = useContext(DragOffsetContext);
+  const isMoveDrag = isDragging && activeId === block.id;
+
   const cls = [
     'tb-block',
     state,
@@ -58,7 +65,7 @@ export function Block({
   const style: React.CSSProperties = {
     top: `${top}px`,
     height: `${height}px`,
-    transform: CSS.Translate.toString(transform),
+    transform: isMoveDrag ? `translate3d(0, ${dy}px, 0)` : undefined,
   };
 
   const showMeta = height >= 36;

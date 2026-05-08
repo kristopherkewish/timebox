@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { createContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -47,6 +47,18 @@ interface Ghost {
   conflict: boolean;
 }
 
+/**
+ * Per-frame drag offset. Computed from raw `pointermove` + `scroll` events on
+ * the timeline-wrap rather than dnd-kit's `transform` value, because dnd-kit's
+ * source-element transform path drifts when the draggable lives inside a
+ * scrollable container with non-zero `scrollTop` (#2). The block consumes this
+ * via context and writes it into its inline `transform`.
+ */
+export const DragOffsetContext = createContext<{ activeId: string | null; dy: number }>({
+  activeId: null,
+  dy: 0,
+});
+
 export function DailyView({
   date,
   inbox,
@@ -63,6 +75,7 @@ export function DailyView({
 
   const [active, setActive] = useState<ActiveDrag | null>(null);
   const [ghost, setGhost] = useState<Ghost | null>(null);
+  const [dy, setDy] = useState(0);
   const [notesId, setNotesId] = useState<string | null>(null);
   const [pendingPastConfirm, setPendingPastConfirm] = useState<
     | null
@@ -71,6 +84,15 @@ export function DailyView({
         action: () => void;
       }
   >(null);
+
+  // Refs that hold the raw drag state. We need synchronous access in
+  // handleMove (dnd-kit's onDragMove fires from the same pointermove that we
+  // listen to, and reading via state would lag a frame).
+  const initialPointerY = useRef(0);
+  const initialPointerX = useRef(0);
+  const initialScrollTop = useRef(0);
+  const currentPointerY = useRef(0);
+  const dyRef = useRef(0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -90,20 +112,61 @@ export function DailyView({
     if (!data?.kind) return;
     const block = (data.task ?? data.block) as Timebox | undefined;
     if (!block) return;
+
+    const ae = e.activatorEvent as PointerEvent | MouseEvent;
+    const wrap = getTimelineWrap();
+    initialPointerY.current = ae.clientY;
+    initialPointerX.current = ae.clientX;
+    initialScrollTop.current = wrap?.scrollTop ?? 0;
+    currentPointerY.current = ae.clientY;
+    dyRef.current = 0;
+    setDy(0);
+
     setActive({ kind: data.kind as ActiveDrag['kind'], id: block.id, block });
   };
 
+  // Track raw pointer + scroll while a drag is in progress. dnd-kit's
+  // `transform` drifts inside scrolled overflow containers, so we ignore it
+  // and recompute dy ourselves: cursor delta + scroll delta.
+  useEffect(() => {
+    if (!active) return;
+    const wrap = getTimelineWrap();
+
+    const recompute = () => {
+      const scrollDelta = (wrap?.scrollTop ?? 0) - initialScrollTop.current;
+      const pointerDelta = currentPointerY.current - initialPointerY.current;
+      const next = pointerDelta + scrollDelta;
+      dyRef.current = next;
+      setDy(next);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      currentPointerY.current = e.clientY;
+      recompute();
+    };
+    const onScroll = () => recompute();
+
+    document.addEventListener('pointermove', onPointerMove, { passive: true });
+    wrap?.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      document.removeEventListener('pointermove', onPointerMove);
+      wrap?.removeEventListener('scroll', onScroll);
+    };
+  }, [active]);
+
   const handleMove = (e: DragMoveEvent) => {
     if (!active) return;
-    const dy = e.delta?.y ?? 0;
+    const dyNow = dyRef.current;
 
     if (active.kind === 'task-from-inbox') {
-      // Compute target start from the original block start (irrelevant for inbox)
-      // by reading pointer Y inside timeline. We approximate using delta from
-      // pointer's clientY relative to grid: dnd-kit gives us active rect.
-      const pointerY = (e.active.rect.current.translated?.top ?? 0) - getTimelineGridTop();
+      // Inbox cards live in a different scroll container, so dnd-kit's
+      // translated rect (which carries the card's "would-be top" with click
+      // offset already baked in) is still the right value to convert.
+      // gridTop is read live so it accounts for the timeline-wrap's scroll.
+      const cardTop = e.active.rect.current.translated?.top ?? 0;
+      const pointerYInGrid = cardTop - getTimelineGridTop();
       const target = snapToIncrement(
-        dayStartMin + (pointerY / hourPx) * 60,
+        dayStartMin + (pointerYInGrid / hourPx) * 60,
         increment,
       );
       const start = clamp(target, dayStartMin, dayEndMin - active.block.durationMin);
@@ -116,7 +179,7 @@ export function DailyView({
     if (active.kind === 'timebox-move') {
       const baseStart = active.block.startMin ?? dayStartMin;
       const target = snapToIncrement(
-        baseStart + (dy / hourPx) * 60,
+        baseStart + (dyNow / hourPx) * 60,
         increment,
       );
       const start = clamp(target, dayStartMin, dayEndMin - active.block.durationMin);
@@ -129,7 +192,7 @@ export function DailyView({
     if (active.kind === 'timebox-resize-bot') {
       const baseStart = active.block.startMin ?? dayStartMin;
       const baseEnd = baseStart + active.block.durationMin;
-      const target = snapToIncrement(baseEnd + (dy / hourPx) * 60, increment);
+      const target = snapToIncrement(baseEnd + (dyNow / hourPx) * 60, increment);
       const newEnd = clamp(target, baseStart + increment, dayEndMin);
       const newDur = newEnd - baseStart;
       const conflict =
@@ -141,7 +204,7 @@ export function DailyView({
     if (active.kind === 'timebox-resize-top') {
       const baseStart = active.block.startMin ?? dayStartMin;
       const baseEnd = baseStart + active.block.durationMin;
-      const target = snapToIncrement(baseStart + (dy / hourPx) * 60, increment);
+      const target = snapToIncrement(baseStart + (dyNow / hourPx) * 60, increment);
       const newStart = clamp(target, dayStartMin, baseEnd - increment);
       const newDur = baseEnd - newStart;
       const conflict =
@@ -154,6 +217,8 @@ export function DailyView({
     const cur = active;
     setActive(null);
     setGhost(null);
+    setDy(0);
+    dyRef.current = 0;
     if (!cur) return;
 
     const overId = e.over?.id;
@@ -264,32 +329,36 @@ export function DailyView({
 
   return (
     <div className="tb-day layout-left">
-      <DndContext
-        sensors={sensors}
-        onDragStart={handleStart}
-        onDragMove={handleMove}
-        onDragEnd={handleEnd}
-        onDragCancel={() => {
-          setActive(null);
-          setGhost(null);
-        }}
-      >
-        <Inbox tasks={inbox} onCreate={onCreate} onOpen={setNotesId} />
-        <Timeline
-          date={date}
-          timeline={timeline}
-          hourPx={hourPx}
-          dayStartMin={dayStartMin}
-          dayEndMin={dayEndMin}
-          increment={increment}
-          showStats={true}
-          ghost={ghost}
-          onOpen={setNotesId}
-          onToggleComplete={onToggleComplete}
-          onKeyboardNudge={onKeyboardNudge}
-          onKeyboardResize={onKeyboardResize}
-        />
-      </DndContext>
+      <DragOffsetContext.Provider value={{ activeId: active?.id ?? null, dy }}>
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleStart}
+          onDragMove={handleMove}
+          onDragEnd={handleEnd}
+          onDragCancel={() => {
+            setActive(null);
+            setGhost(null);
+            setDy(0);
+            dyRef.current = 0;
+          }}
+        >
+          <Inbox tasks={inbox} onCreate={onCreate} onOpen={setNotesId} />
+          <Timeline
+            date={date}
+            timeline={timeline}
+            hourPx={hourPx}
+            dayStartMin={dayStartMin}
+            dayEndMin={dayEndMin}
+            increment={increment}
+            showStats={true}
+            ghost={ghost}
+            onOpen={setNotesId}
+            onToggleComplete={onToggleComplete}
+            onKeyboardNudge={onKeyboardNudge}
+            onKeyboardResize={onKeyboardResize}
+          />
+        </DndContext>
+      </DragOffsetContext.Provider>
       {notesId && (
         <NotesModal
           block={allTimeboxes[notesId]}
@@ -349,6 +418,11 @@ function clamp(n: number, min: number, max: number): number {
   if (n < min) return min;
   if (n > max) return max;
   return n;
+}
+
+function getTimelineWrap(): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+  return document.querySelector('.tb-timeline-wrap') as HTMLElement | null;
 }
 
 function getTimelineGridTop(): number {
