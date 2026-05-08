@@ -39,23 +39,3 @@ export function InboxCard({ task, onOpen }: Props) {
     </div>
   );
 }
-
-export function InboxCardDragOverlay({ task }: { task: Timebox }) {
-  return (
-    <div className="tb-inbox-card">
-      <div className="grip">
-        <Icon name="grip" size={14} />
-      </div>
-      <div className="tb-inbox-card-title">{task.title}</div>
-      <div className="tb-inbox-card-meta">
-        <span className="tb-inbox-card-dur">{fmtDur(task.durationMin)}</span>
-        {task.notes && (
-          <>
-            <span className="tb-inbox-card-dot" />
-            <span>{task.notes}</span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
