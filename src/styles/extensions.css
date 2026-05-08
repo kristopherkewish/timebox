@@ -230,6 +230,10 @@ body { font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; }
 
 /* ---------- Daily timeline overlay element (drag preview) ---------- */
 .tb-block.is-source-while-dragging { opacity: 0.4; }
+
+/* Resize handles get a vertical resize cursor so they're distinguishable
+   from the surrounding draggable block surface. */
+.tb-block .tb-resize { cursor: ns-resize; }
 .tb-block.conflict, .tb-block.ghost.conflict {
   border-color: var(--warn);
   border-left-color: var(--warn);
