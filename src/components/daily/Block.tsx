@@ -1,5 +1,4 @@
 import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { Icon } from '@/components/icons/Icon';
 import { fmtDur, fmtTime } from '@/lib/time';
 import { minutesToPx } from '@/lib/timeline';
@@ -32,7 +31,7 @@ export function Block({
   const top = minutesToPx(block.startMin ?? dayStart, dayStart, hourPx);
   const height = (block.durationMin / 60) * hourPx;
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: block.id,
     data: { kind: 'timebox-move', block },
   });
@@ -49,7 +48,7 @@ export function Block({
   const cls = [
     'tb-block',
     state,
-    isDragging ? 'dragging' : '',
+    isDragging ? 'dragging is-source-while-dragging' : '',
     conflict ? 'conflict' : '',
   ]
     .filter(Boolean)
@@ -58,7 +57,6 @@ export function Block({
   const style: React.CSSProperties = {
     top: `${top}px`,
     height: `${height}px`,
-    transform: CSS.Translate.toString(transform),
   };
 
   const showMeta = height >= 36;
@@ -140,6 +138,60 @@ export function Block({
         {...moveResize.listeners}
         {...moveResize.attributes}
       />
+    </div>
+  );
+}
+
+interface OverlayProps {
+  block: Timebox;
+  state: BlockState;
+  hourPx: number;
+}
+
+export function BlockDragOverlay({ block, state, hourPx }: OverlayProps) {
+  const height = (block.durationMin / 60) * hourPx;
+  const cls = ['tb-block', state, 'dragging'].filter(Boolean).join(' ');
+  const showMeta = height >= 36;
+  const showNote = block.notes && height >= 70;
+  return (
+    <div
+      className={cls}
+      style={{
+        position: 'static',
+        height: `${height}px`,
+        left: 0,
+        right: 0,
+      }}
+    >
+      <div className="tb-block-title">
+        <span
+          className="tb-check"
+          style={{
+            background: state === 'completed' ? 'var(--success)' : undefined,
+            borderColor: state === 'completed' ? 'var(--success)' : undefined,
+            color: state === 'completed' ? 'white' : 'transparent',
+          }}
+        >
+          {state === 'completed' && <Icon name="check" size={9} stroke={2.5} />}
+        </span>
+        <span>{block.title}</span>
+      </div>
+      {showMeta && (
+        <div className="tb-block-meta">
+          <span>
+            {fmtTime(block.startMin ?? 0)} – {fmtTime((block.startMin ?? 0) + block.durationMin)}
+          </span>
+          <span>·</span>
+          <span>{fmtDur(block.durationMin)}</span>
+          {block.notes && height < 70 && (
+            <>
+              <span>·</span>
+              <Icon name="note" size={10} />
+            </>
+          )}
+        </div>
+      )}
+      {showNote && <div className="tb-block-note">{block.notes}</div>}
     </div>
   );
 }

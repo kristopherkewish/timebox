@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   KeyboardSensor,
   useSensor,
@@ -15,6 +16,8 @@ import type {
 import { Inbox } from './Inbox';
 import { Timeline } from './Timeline';
 import { NotesModal } from './NotesModal';
+import { BlockDragOverlay } from './Block';
+import { InboxCardDragOverlay } from './InboxCard';
 import {
   useCreateTimebox,
   useDeleteTimebox,
@@ -22,6 +25,7 @@ import {
 } from '@/hooks/useDaily';
 import type { Timebox } from '@/hooks/useDaily';
 import { detectConflict, snapToIncrement } from '@/lib/timeline';
+import { deriveState } from '@/lib/completion';
 import { isPastDate } from '@/lib/time';
 
 interface Props {
@@ -262,6 +266,16 @@ export function DailyView({
     confirmIfPast(b.title, () => update.mutate({ id, patch: { durationMin: newDur } }));
   };
 
+  const activeState = active && active.kind === 'timebox-move'
+    ? deriveState(Date.now(), {
+        date,
+        startMin: active.block.startMin,
+        durationMin: active.block.durationMin,
+        completionState: active.block.completionState,
+        completionOverridden: active.block.completionOverridden,
+      })
+    : 'upcoming';
+
   return (
     <div className="tb-day layout-left">
       <DndContext
@@ -289,6 +303,13 @@ export function DailyView({
           onKeyboardNudge={onKeyboardNudge}
           onKeyboardResize={onKeyboardResize}
         />
+        <DragOverlay dropAnimation={null}>
+          {active?.kind === 'timebox-move' ? (
+            <BlockDragOverlay block={active.block} state={activeState} hourPx={hourPx} />
+          ) : active?.kind === 'task-from-inbox' ? (
+            <InboxCardDragOverlay task={active.block} />
+          ) : null}
+        </DragOverlay>
       </DndContext>
       {notesId && (
         <NotesModal
