@@ -237,6 +237,13 @@ body { font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; }
 }
 .tb-block.ghost.conflict { background: color-mix(in oklab, var(--warn) 22%, transparent); }
 
+/* The base `.tb-block` rule transitions `transform` over 100ms — fine for
+   hover/snap-back, but it makes the block lag behind the cursor while @dnd-kit
+   is driving `transform` via every pointermove. The lag visually displaces the
+   block above the cursor when dragging downward. Kill the transition while
+   the drag is active so the block tracks the mouse 1:1. */
+.tb-block.dragging { transition: none; }
+
 /* ---------- Notes flyout ---------- */
 .notes-flyout-title {
   font-size: 14px; font-weight: 600; margin: 0;
