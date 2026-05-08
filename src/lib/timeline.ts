@@ -48,3 +48,73 @@ export function clampToDay(
   if (start + duration > dayEnd) return dayEnd - duration;
   return start;
 }
+
+export interface ColumnLayout {
+  column: number;
+  cols: number;
+}
+
+/**
+ * Assigns each timeline block a column so overlapping blocks render side-by-side.
+ *
+ * Greedy interval-graph layout: blocks are grouped into clusters of transitively
+ * overlapping intervals, each block is placed in the lowest-indexed column that is
+ * free at its start, and every block in a cluster shares the cluster's max column
+ * count so widths are equal within the cluster.
+ */
+export function layoutColumns(
+  blocks: Array<Pick<TimelineBlock, 'id' | 'startMin' | 'durationMin'>>,
+): Record<string, ColumnLayout> {
+  const onTimeline = blocks.filter(
+    (b): b is { id: string; startMin: number; durationMin: number } => b.startMin != null,
+  );
+  const sorted = [...onTimeline].sort((a, b) => {
+    if (a.startMin !== b.startMin) return a.startMin - b.startMin;
+    return b.durationMin - a.durationMin;
+  });
+
+  const result: Record<string, ColumnLayout> = {};
+  let columns: Array<{ endMin: number }[]> = [];
+  let groupIds: string[] = [];
+  let groupEndMax = -Infinity;
+
+  const finalize = () => {
+    const cols = columns.length;
+    for (const id of groupIds) {
+      result[id] = { column: result[id].column, cols };
+    }
+    columns = [];
+    groupIds = [];
+    groupEndMax = -Infinity;
+  };
+
+  for (const b of sorted) {
+    const start = b.startMin;
+    const end = start + b.durationMin;
+
+    if (start >= groupEndMax) finalize();
+
+    let colIdx = -1;
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      const last = col[col.length - 1];
+      if (last.endMin <= start) {
+        colIdx = i;
+        break;
+      }
+    }
+    if (colIdx === -1) {
+      columns.push([{ endMin: end }]);
+      colIdx = columns.length - 1;
+    } else {
+      columns[colIdx].push({ endMin: end });
+    }
+
+    result[b.id] = { column: colIdx, cols: 0 };
+    groupIds.push(b.id);
+    if (end > groupEndMax) groupEndMax = end;
+  }
+  finalize();
+
+  return result;
+}

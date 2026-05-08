@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { fmtTime, isToday, nowMinutes } from '@/lib/time';
-import { minutesToPx } from '@/lib/timeline';
+import { layoutColumns, minutesToPx } from '@/lib/timeline';
 import { deriveState } from '@/lib/completion';
 import type { BlockState } from '@/lib/completion';
 import type { Timebox } from '@/hooks/useDaily';
@@ -70,6 +70,8 @@ export function Timeline({
     return out;
   }, [timeline, date, now]);
 
+  const columnLayout = useMemo(() => layoutColumns(timeline), [timeline]);
+
   const planned = timeline.reduce((s, b) => s + b.durationMin, 0);
   const completed = timeline
     .filter((b) => states[b.id] === 'completed')
@@ -123,19 +125,24 @@ export function Timeline({
             </div>
           )}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-            {timeline.map((b) => (
-              <Block
-                key={b.id}
-                block={b}
-                state={states[b.id]}
-                hourPx={hourPx}
-                dayStart={dayStartMin}
-                onOpen={onOpen}
-                onToggleComplete={onToggleComplete}
-                onKeyboardNudge={onKeyboardNudge}
-                onKeyboardResize={onKeyboardResize}
-              />
-            ))}
+            {timeline.map((b) => {
+              const layout = columnLayout[b.id];
+              return (
+                <Block
+                  key={b.id}
+                  block={b}
+                  state={states[b.id]}
+                  hourPx={hourPx}
+                  dayStart={dayStartMin}
+                  column={layout?.column}
+                  cols={layout?.cols}
+                  onOpen={onOpen}
+                  onToggleComplete={onToggleComplete}
+                  onKeyboardNudge={onKeyboardNudge}
+                  onKeyboardResize={onKeyboardResize}
+                />
+              );
+            })}
             {ghost && (
               <>
                 <div

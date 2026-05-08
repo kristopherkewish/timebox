@@ -12,11 +12,19 @@ interface Props {
   hourPx: number;
   dayStart: number; // minutes
   conflict?: boolean;
+  column?: number;
+  cols?: number;
   onOpen: (id: string) => void;
   onToggleComplete: (id: string) => void;
   onKeyboardNudge?: (id: string, deltaMin: number) => void;
   onKeyboardResize?: (id: string, deltaMin: number) => void;
 }
+
+// Matches `.tb-block { left: 6px; right: 12px }` in app.css. Kept in sync so
+// column-divided blocks use the same outer gutters as a single full-width block.
+const LEFT_PAD_PX = 6;
+const RIGHT_PAD_PX = 12;
+const COLUMN_GAP_PX = 4;
 
 export function Block({
   block,
@@ -24,6 +32,8 @@ export function Block({
   hourPx,
   dayStart,
   conflict,
+  column = 0,
+  cols = 1,
   onOpen,
   onToggleComplete,
   onKeyboardNudge,
@@ -60,6 +70,12 @@ export function Block({
     height: `${height}px`,
     transform: CSS.Translate.toString(transform),
   };
+  if (cols > 1) {
+    const totalGutter = LEFT_PAD_PX + RIGHT_PAD_PX + COLUMN_GAP_PX * (cols - 1);
+    style.left = `calc(${LEFT_PAD_PX}px + ${column} * ((100% - ${totalGutter}px) / ${cols} + ${COLUMN_GAP_PX}px))`;
+    style.width = `calc((100% - ${totalGutter}px) / ${cols})`;
+    style.right = 'auto';
+  }
 
   const showMeta = height >= 36;
   const showNote = !isDragging && block.notes && height >= 70;
