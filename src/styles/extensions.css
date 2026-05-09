@@ -301,3 +301,251 @@ body { font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; }
 .tb-month-week-card:focus-visible {
   outline-offset: 1px;
 }
+
+/* ==========================================================================
+   Responsive — phone (≤640px) and tablet (≤900px) overrides on top of the
+   verbatim app.css. All rules here are media-query scoped so desktop layout
+   is byte-identical to the design handoff at ≥901px widths.
+   ========================================================================== */
+
+/* ---------- Bottom tab bar (phone) ---------- */
+.tb-bottom-tabs { display: none; }
+
+@media (max-width: 640px) {
+  /* Shell becomes a single column with the bottom tab bar pinned below the
+     main content. Hides the vertical rail entirely on phone. */
+  .tb-shell--phone {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .tb-bottom-tabs {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    height: 58px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 10;
+  }
+  .tb-bottom-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 4px;
+    color: var(--ink-3);
+    font-size: 10px;
+    font-weight: 500;
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+  .tb-bottom-tab.active { color: var(--accent-ink); }
+  .tb-bottom-tab-icon-wrap {
+    width: 48px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    transition: background 0.15s;
+  }
+  .tb-bottom-tab.active .tb-bottom-tab-icon-wrap {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+  .tb-bottom-tab-label { letter-spacing: 0.01em; }
+}
+
+/* ---------- Header (phone) ---------- */
+@media (max-width: 640px) {
+  .tb-header {
+    padding: 10px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .tb-header-title { font-size: 18px; }
+  .tb-header-eyebrow { font-size: 10px; }
+  .tb-header-right {
+    justify-content: space-between;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* Bottom tab bar covers view switching; segmented control would just duplicate it. */
+  .tb-header-right .tb-segmented { display: none; }
+  .tb-date-step { flex: 1; min-width: 0; }
+  .tb-date-step .label { flex: 1; text-align: center; }
+}
+
+/* ---------- Settings (phone) ---------- */
+@media (max-width: 640px) {
+  .settings-wrap {
+    padding: 16px 16px 80px; /* bottom padding clears bottom-tab bar */
+    gap: 22px;
+  }
+  .settings-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 14px 0;
+    align-items: stretch;
+  }
+  .settings-row .control { justify-self: stretch; }
+  .settings-row .control select.settings-select { width: 100%; height: 36px; }
+}
+
+/* ---------- Inbox toggle (chevron) — phone only ---------- */
+.tb-inbox-toggle {
+  display: none;
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--ink-3);
+  margin-left: auto;
+  border-radius: 6px;
+}
+.tb-inbox-toggle:hover { color: var(--ink); background: var(--surface-2); }
+
+/* ---------- Daily view (phone) ---------- */
+@media (max-width: 640px) {
+  .tb-day {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .tb-inbox {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    max-height: 96px;
+    transition: max-height 0.2s ease;
+    overflow: hidden;
+  }
+  .tb-inbox.is-expanded { max-height: 42vh; overflow: visible; }
+  .tb-inbox-toggle { display: inline-flex; align-items: center; justify-content: center; }
+  .tb-inbox-header { padding: 8px 10px 6px 14px; align-items: center; }
+
+  /* When collapsed, the list flips to a horizontal-scroll strip of card chips. */
+  .tb-inbox:not(.is-expanded) .tb-inbox-list {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 14px 10px;
+    touch-action: pan-x;
+    scroll-snap-type: x proximity;
+    gap: 8px;
+  }
+  .tb-inbox:not(.is-expanded) .tb-inbox-card {
+    flex: 0 0 auto;
+    width: 180px;
+    scroll-snap-align: start;
+    margin: 0;
+  }
+  .tb-inbox:not(.is-expanded) .empty-message {
+    display: none;
+  }
+  .tb-inbox:not(.is-expanded) .tb-inbox-add { display: none; }
+
+  /* Timeline gutter shrinks so blocks get more horizontal space on a phone. */
+  .tb-timeline {
+    padding: 12px 8px 80px 44px; /* bottom 80 clears tab bar */
+  }
+  .tb-hour-label { left: -40px; width: 36px; font-size: 10px; }
+  .tb-now-label { left: -40px; width: 36px; font-size: 10px; }
+  .tb-block { left: 4px; right: 6px; }
+
+  /* Stats strip is nice-to-have on a phone — drop it for vertical space. */
+  .tb-stats { display: none; }
+}
+
+/* ---------- Weekly view (phone) ---------- */
+@media (max-width: 640px) {
+  .tb-week {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .tb-week-grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 80px; /* clear bottom-tab bar */
+  }
+  .tb-day-col {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .tb-day-col:last-child { border-bottom: 0; }
+  .tb-day-col-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 14px;
+  }
+  .tb-day-col-head .num { font-size: 18px; margin-top: 0; }
+  .tb-day-col-body {
+    padding: 8px 14px 12px;
+    min-height: 36px;
+  }
+  /* Empty days collapse to a thin band so the user doesn't scroll past piles
+     of empty space. The body still mounts as a droppable. */
+  .tb-day-col-body:empty::before {
+    content: 'No tasks';
+    color: var(--ink-4);
+    font-size: 11.5px;
+  }
+}
+
+/* ---------- Monthly view (phone) ---------- */
+@media (max-width: 640px) {
+  .tb-month {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .tb-month-list {
+    padding: 12px 14px 80px; /* clear bottom-tab bar */
+  }
+  .tb-month-week {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .tb-month-week-meta {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding-right: 0;
+    padding-bottom: 10px;
+    flex-direction: row;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .tb-month-week-num { font-size: 22px; }
+}
+
+/* ---------- Modal + auth (phone) ---------- */
+@media (max-width: 640px) {
+  .modal-backdrop { padding: 12px; }
+  .modal-card {
+    padding: 18px 18px 20px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+  .auth-page { padding: 16px; }
+  .auth-card { padding: 22px 18px; }
+}
+
+/* ---------- Touch targets (any width, coarse pointer) ---------- */
+@media (pointer: coarse) {
+  /* Resize handles in app.css are 28×4px and only become visible on hover —
+     unworkable on touch. Enlarge them and keep them subtly visible at rest so
+     users discover the affordance. !important is required because the hover
+     rule in app.css carries higher specificity. */
+  .tb-block .tb-resize {
+    width: 60px;
+    height: 8px;
+    opacity: 0.4 !important;
+  }
+}

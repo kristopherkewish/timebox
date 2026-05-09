@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
   useDraggable,
   useDroppable,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { Icon } from '@/components/icons/Icon';
 import {
   useCreateWeeklyTask,
@@ -17,6 +18,7 @@ import {
 } from '@/hooks/useWeekly';
 import type { WeeklyTask } from '@/hooks/useWeekly';
 import { parseISODate } from '@/lib/time';
+import { usePoolCollapsed } from '@/hooks/usePoolCollapsed';
 
 interface Props {
   weekStart: string;
@@ -37,12 +39,25 @@ export function WeeklyView({ weekStart, pool, days, firstDayOfWeek, todayIsoDate
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor),
   );
 
+  const {
+    collapsed: poolCollapsed,
+    setCollapsed: setPoolCollapsed,
+    toggle: togglePoolCollapsed,
+  } = usePoolCollapsed('weekly', true);
+
   const orderedDays = orderDaysFromWeek(weekStart, firstDayOfWeek, days);
   const today = todayIsoDate;
+
+  const handleStart = (_e: DragStartEvent) => {
+    // On phone, ensure the pool is visible while a drag is active so the user
+    // can target it. On desktop the .is-expanded class has no visual effect.
+    setTimeout(() => setPoolCollapsed(false), 0);
+  };
 
   const handleEnd = (e: DragEndEvent) => {
     const id = String(e.active.id);
@@ -74,10 +89,12 @@ export function WeeklyView({ weekStart, pool, days, firstDayOfWeek, todayIsoDate
 
   return (
     <div className="tb-week">
-      <DndContext sensors={sensors} onDragEnd={handleEnd}>
+      <DndContext sensors={sensors} onDragStart={handleStart} onDragEnd={handleEnd}>
         <PoolDroppable
           tasks={pool}
           onOpen={(id) => setEditingId(id)}
+          collapsed={poolCollapsed}
+          onToggleCollapsed={togglePoolCollapsed}
         >
           {adding ? (
             <input
@@ -165,22 +182,35 @@ function orderDaysFromWeek(
 function PoolDroppable({
   tasks,
   onOpen,
+  collapsed,
+  onToggleCollapsed,
   children,
 }: {
   tasks: WeeklyTask[];
   onOpen: (id: string) => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: 'weekly-pool' });
   return (
     <aside
       ref={setNodeRef}
-      className="tb-inbox"
+      className={`tb-inbox ${collapsed ? '' : 'is-expanded'}`}
       style={isOver ? { background: 'var(--surface-2)' } : undefined}
     >
       <div className="tb-inbox-header">
         <div className="tb-inbox-title">Weekly pool</div>
         <div className="tb-inbox-count">{tasks.length}</div>
+        <button
+          type="button"
+          className="tb-inbox-toggle"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? 'Expand pool' : 'Collapse pool'}
+          aria-expanded={!collapsed}
+        >
+          <Icon name={collapsed ? 'chevron-right' : 'chevron-left'} size={14} />
+        </button>
       </div>
       <div className="tb-inbox-list">
         {tasks.map((t) => (

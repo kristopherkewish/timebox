@@ -9,11 +9,13 @@ interface Props {
   tasks: Timebox[];
   onCreate: (title: string, durationMin: number) => void;
   onOpen: (id: string) => void;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }
 
 const DEFAULT_DURATION = 30;
 
-export function Inbox({ tasks, onCreate, onOpen }: Props) {
+export function Inbox({ tasks, onCreate, onOpen, collapsed = false, onToggleCollapsed }: Props) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
   const total = tasks.reduce((s, t) => s + t.durationMin, 0);
@@ -35,10 +37,12 @@ export function Inbox({ tasks, onCreate, onOpen }: Props) {
     setAdding(false);
   };
 
+  const className = `tb-inbox ${collapsed ? '' : 'is-expanded'}`;
+
   return (
     <aside
       ref={setNodeRef}
-      className="tb-inbox"
+      className={className}
       style={isOver ? { background: 'var(--surface-2)' } : undefined}
     >
       <div className="tb-inbox-header">
@@ -46,6 +50,17 @@ export function Inbox({ tasks, onCreate, onOpen }: Props) {
         <div className="tb-inbox-count">
           {tasks.length} · {fmtDur(total)}
         </div>
+        {onToggleCollapsed && (
+          <button
+            type="button"
+            className="tb-inbox-toggle"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? 'Expand inbox' : 'Collapse inbox'}
+            aria-expanded={!collapsed}
+          >
+            <Icon name={collapsed ? 'chevron-right' : 'chevron-left'} size={14} />
+          </button>
+        )}
       </div>
       <div className="tb-inbox-list">
         {tasks.map((t) => (

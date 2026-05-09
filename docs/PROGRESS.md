@@ -108,6 +108,32 @@ Implementation:
 
 ---
 
+## Phase 9 — Mobile responsive ✅ Code complete (verification pending real device)
+
+Re-interprets requirements §1.3 ("Optimised for desktop widths (≥1200px); mobile is v2") — making the app usable on phones with full feature parity, including touch drag-drop. All CSS lives in `src/styles/extensions.css` as media-query overrides; `tokens.css` and `app.css` remain byte-for-byte from the design handoff.
+
+- [x] `useMediaQuery` hook (`src/hooks/useMediaQuery.ts`).
+- [x] `usePoolCollapsed` hook (`src/hooks/usePoolCollapsed.ts`) — shared persistence-backed collapse state for the daily inbox + weekly/monthly pools, keyed `tb.poolCollapsed.{daily|weekly|monthly}`.
+- [x] DnD sensors swapped from `PointerSensor` to `MouseSensor` + `TouchSensor` (delay 200ms / tolerance 8px) + `KeyboardSensor` in all three views. Fixes accidental-drag-while-scrolling on touch.
+- [x] `BottomTabBar` component replaces the 56px vertical rail at `(max-width: 640px)`. 4 tabs (Day / Week / Month / Settings), accent-soft active pill, respects `env(safe-area-inset-bottom)` for iOS.
+- [x] Header phone CSS — vertical stack, segmented view-toggle hidden (covered by tabs), date stepper stretches.
+- [x] Settings phone CSS — `.settings-row` becomes single-column with stretched controls.
+- [x] Daily view phone — inbox becomes a collapsible top strip (horizontal-scroll card chips when collapsed; `.is-expanded` swaps to vertical 42vh list). Auto-expands on `timebox-move` drag-start. Timeline gutter shrinks (44px label rail), `.tb-stats` hidden, bottom padding clears tab bar.
+- [x] Weekly view phone — 7-col grid → vertical day stack. `.tb-day-col-head` becomes a horizontal banner. Empty days collapse to 36px with a "No tasks" `:empty::before` placeholder. Pool reuses the inbox top-strip pattern; auto-expands on any drag-start.
+- [x] Monthly view phone — `.tb-month-week` 180px+1fr → 1fr; meta becomes a horizontal flex row. Pool reuses top-strip pattern.
+- [x] Modal + auth phone padding — `.modal-backdrop` 12px, `.modal-card` `max-height: calc(100vh - 24px)` + `overflow-y: auto`, `.auth-page` 16px, `.auth-card` 22px 18px.
+- [x] Touch-target enlargement via `@media (pointer: coarse)` — `.tb-block .tb-resize` becomes 60×8px, opacity 0.4 (always visible).
+
+**Verified by repo:** `npm run build` clean (CSS 28KB / JS 335KB). `npm test` 23/23 green.
+
+**Pending owner verification:**
+- DevTools device emulation (iPhone SE 375×667, Pixel 7 412×915, iPad Mini 768×1024) per the plan's per-view test scenarios.
+- DevTools touch emulation: confirm 200ms press-and-hold drag activates and that vertical timeline scroll does NOT trigger accidental drag.
+- Real-device sanity check via `npm run dev -- --host` from a phone over LAN — important for `env(safe-area-inset-bottom)` (iOS Safari only) and momentum-scroll/DnD interaction.
+- Desktop regression visual diff at 1280 / 1024 / 1440 px against `Personal Timebox App/design_handoff_timebox/Timebox.html`.
+
+---
+
 ## Phase 8 — Deployment readiness ⏭ Owner action
 
 User-driven steps left:

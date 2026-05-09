@@ -1,7 +1,8 @@
 import { createContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -23,6 +24,7 @@ import {
 import type { Timebox } from '@/hooks/useDaily';
 import { detectConflict, snapToIncrement } from '@/lib/timeline';
 import { isPastDate } from '@/lib/time';
+import { usePoolCollapsed } from '@/hooks/usePoolCollapsed';
 
 interface Props {
   date: string;
@@ -84,6 +86,11 @@ export function DailyView({
         action: () => void;
       }
   >(null);
+  const {
+    collapsed: inboxCollapsed,
+    setCollapsed: setInboxCollapsed,
+    toggle: toggleInboxCollapsed,
+  } = usePoolCollapsed('daily', true);
 
   // Refs that hold the raw drag state. We need synchronous access in
   // handleMove (dnd-kit's onDragMove fires from the same pointermove that we
@@ -95,7 +102,8 @@ export function DailyView({
   const dyRef = useRef(0);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor),
   );
 
@@ -123,6 +131,14 @@ export function DailyView({
     setDy(0);
 
     setActive({ kind: data.kind as ActiveDrag['kind'], id: block.id, block });
+
+    // On phone, the inbox lives as a collapsed top strip. When the user starts
+    // dragging a timeline block back toward the inbox, expand it so they can see
+    // where they're dropping. Defer one frame so dnd-kit's pointer activation
+    // lands first.
+    if (data.kind === 'timebox-move') {
+      setTimeout(() => setInboxCollapsed(false), 0);
+    }
   };
 
   // Track raw pointer + scroll while a drag is in progress. dnd-kit's
@@ -342,7 +358,13 @@ export function DailyView({
             dyRef.current = 0;
           }}
         >
-          <Inbox tasks={inbox} onCreate={onCreate} onOpen={setNotesId} />
+          <Inbox
+            tasks={inbox}
+            onCreate={onCreate}
+            onOpen={setNotesId}
+            collapsed={inboxCollapsed}
+            onToggleCollapsed={toggleInboxCollapsed}
+          />
           <Timeline
             date={date}
             timeline={timeline}

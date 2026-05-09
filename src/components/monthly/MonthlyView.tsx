@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
   useDraggable,
   useDroppable,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { Icon } from '@/components/icons/Icon';
 import {
   useCreateMonthlyTask,
@@ -17,6 +18,7 @@ import {
 } from '@/hooks/useMonthly';
 import type { MonthlyTask } from '@/hooks/useMonthly';
 import type { MonthWeek } from '@/lib/month';
+import { usePoolCollapsed } from '@/hooks/usePoolCollapsed';
 
 interface Props {
   monthStart: string;
@@ -35,9 +37,20 @@ export function MonthlyView({ monthStart, pool, byWeek, weeks, currentWeekIndex 
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor),
   );
+
+  const {
+    collapsed: poolCollapsed,
+    setCollapsed: setPoolCollapsed,
+    toggle: togglePoolCollapsed,
+  } = usePoolCollapsed('monthly', true);
+
+  const handleStart = (_e: DragStartEvent) => {
+    setTimeout(() => setPoolCollapsed(false), 0);
+  };
 
   const handleEnd = (e: DragEndEvent) => {
     const id = String(e.active.id);
@@ -75,8 +88,13 @@ export function MonthlyView({ monthStart, pool, byWeek, weeks, currentWeekIndex 
 
   return (
     <div className="tb-month">
-      <DndContext sensors={sensors} onDragEnd={handleEnd}>
-        <PoolDroppable tasks={pool} onOpen={(id) => setEditingId(id)}>
+      <DndContext sensors={sensors} onDragStart={handleStart} onDragEnd={handleEnd}>
+        <PoolDroppable
+          tasks={pool}
+          onOpen={(id) => setEditingId(id)}
+          collapsed={poolCollapsed}
+          onToggleCollapsed={togglePoolCollapsed}
+        >
           {adding ? (
             <input
               autoFocus
@@ -134,22 +152,35 @@ export function MonthlyView({ monthStart, pool, byWeek, weeks, currentWeekIndex 
 function PoolDroppable({
   tasks,
   onOpen,
+  collapsed,
+  onToggleCollapsed,
   children,
 }: {
   tasks: MonthlyTask[];
   onOpen: (id: string) => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: 'monthly-pool' });
   return (
     <aside
       ref={setNodeRef}
-      className="tb-inbox"
+      className={`tb-inbox ${collapsed ? '' : 'is-expanded'}`}
       style={isOver ? { background: 'var(--surface-2)' } : undefined}
     >
       <div className="tb-inbox-header">
         <div className="tb-inbox-title">Monthly pool</div>
         <div className="tb-inbox-count">{tasks.length}</div>
+        <button
+          type="button"
+          className="tb-inbox-toggle"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? 'Expand pool' : 'Collapse pool'}
+          aria-expanded={!collapsed}
+        >
+          <Icon name={collapsed ? 'chevron-right' : 'chevron-left'} size={14} />
+        </button>
       </div>
       <div className="tb-inbox-list">
         {tasks.map((t) => (
