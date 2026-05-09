@@ -250,7 +250,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 10px 12px 10px 22px;
   display: flex; flex-direction: column; gap: 4px;
   cursor: grab;
   transition: border-color 0.1s, box-shadow 0.1s;
