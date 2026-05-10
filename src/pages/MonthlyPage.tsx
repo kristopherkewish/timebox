@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Header } from '@/components/shell/Header';
-import { MonthlyView } from '@/components/monthly/MonthlyView';
+import { Header } from '@/components/desktop/shell/Header';
+import { MonthlyView } from '@/components/desktop/monthly/MonthlyView';
 import { useMonthly } from '@/hooks/useMonthly';
 import { useSettings } from '@/hooks/useSettings';
 import { localISODate, monthStartFor, parseISODate } from '@/lib/time';

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Header } from '@/components/shell/Header';
-import { DailyView } from '@/components/daily/DailyView';
+import { Header } from '@/components/desktop/shell/Header';
+import { DailyView } from '@/components/desktop/daily/DailyView';
 import { useDaily } from '@/hooks/useDaily';
 import { useSettings } from '@/hooks/useSettings';
 import { addDays, isToday, localISODate, parseISODate } from '@/lib/time';

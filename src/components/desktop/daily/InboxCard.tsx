@@ -1,5 +1,5 @@
 import { useDraggable } from '@dnd-kit/core';
-import { Icon } from '@/components/icons/Icon';
+import { Icon } from '@/components/desktop/icons/Icon';
 import { fmtDur } from '@/lib/time';
 import type { Timebox } from '@/hooks/useDaily';
 

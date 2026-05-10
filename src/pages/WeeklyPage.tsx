@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Header } from '@/components/shell/Header';
-import { WeeklyView } from '@/components/weekly/WeeklyView';
+import { Header } from '@/components/desktop/shell/Header';
+import { WeeklyView } from '@/components/desktop/weekly/WeeklyView';
 import { useWeekly } from '@/hooks/useWeekly';
 import { useSettings } from '@/hooks/useSettings';
 import { addDays, localISODate, parseISODate, weekStartFor } from '@/lib/time';
