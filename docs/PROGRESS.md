@@ -182,14 +182,31 @@ Verified by repo:
 
 ---
 
-## Phase 11 — Mobile Week + Month ⏳ Pending
+## Phase 11 — Mobile Week + Month ✅ Complete (pending owner smoke)
 
-- [ ] Mobile Week: header, week strip (7 day pills with task pips), `<PoolStrip scope="week">`, week-card list.
-- [ ] Pool→day drag for Week (`PATCH /api/weekly-tasks/[id]`).
-- [ ] Mobile Month: header, `<PoolStrip scope="month">`, vertical week-card list, current-week accent ring.
-- [ ] Pool→week drag for Month (`PATCH /api/monthly-tasks/[id]`).
-- [ ] Subhead segmented control wired to NavLink (mirrors tab bar).
-- [ ] QuickAdd Day/Time fields hidden when `scope !== 'day'` (per §8.2 / §9.2 — no scheduling at week/month level).
+- [x] **Mobile Week** (`src/pages/mobile/MobileWeekPage.tsx`) — header (range eyebrow + `This week` + week chevrons), segmented Day / Week / Month subhead with Week active, total-tasks pill, `<WeekStrip>` (7 day pills, today filled, weekend muted, up to 3 task pips), `<PoolStrip scope="week">`, vertical list of `<WeekCard>` (one per day, each a `useDroppable`).
+- [x] **Pool → day drag** for Week — `<DndContext>` on the page; drop on `week-day-N` mutates `dayOfWeek` via `PATCH /api/weekly-tasks/[id]`.
+- [x] **Mobile Month** (`src/pages/mobile/MobileMonthPage.tsx`) — header (`{n} weeks · {m} tasks` eyebrow + month name + year + month chevrons), segmented subhead with Month active, `<PoolStrip scope="month">`, vertical list of `<MonthWeekCard>` (one per ISO week of the month, each a `useDroppable`, current week gets the `.current` accent ring).
+- [x] **Pool → week drag** for Month — drop on `month-week-N` mutates `weekIndex` via `PATCH /api/monthly-tasks/[id]`.
+- [x] **Segmented control wiring** — Day / Week / Month buttons in the subhead navigate to `/`, `/week`, `/month` respectively, on every mobile page.
+- [x] **Scope-aware QuickAdd** — `<QuickAddSheet>` now branches on `payload.scope`: day shows duration chips + auto-schedule toggle; week/month show only a title input + helper text + `Add to {scope} pool` CTA. Each scope uses its respective `useCreate*Task` hook.
+- [x] Pool cards on Week/Month use `dragKind='pool-card-week'` / `'pool-card-month'`; the Today page's drag handler ignores those (kind mismatch), so the same `<PoolStrip>` works in three scopes.
+
+**Verified:**
+- `npm run build` clean. Bundles: `index.js` 355 KB / 109 KB gz; `MobileShell.js` 16.6 KB / 4.9 KB gz (sheets + 3 mobile pages); `MobileShell.css` 20 KB.
+- `npm test --run` — 33 / 33 tests green.
+
+**Owner smoke (do once):**
+- On a phone, navigate to `/week` via the tab bar → header reads "This week" with the date range; the strip shows the 7 day pills with pip counts.
+- Tap `+ Add` in the weekly pool → composer focuses → Save → fresh card lands. (For Phase 11 the inline composer still uses the daily compose UI — title + duration chips. The duration is captured but ignored at the API since weekly tasks don't have one. Phase 12 polish will scope the composer's chip row.)
+- Drag a pool card onto Wednesday → card jumps to Wednesday's body, persists across `?week=` navigation, returns to pool when dragged onto an empty day vs another → check via the same path.
+- Tap the FAB on `/week` → QuickAdd opens with the **weekly** form (title only, no duration chips, no schedule toggle, CTA reads `Add to weekly pool`). Save → task lands in the week's pool.
+- On `/month`, repeat: drag pool card onto Week 20 → persists; current-week ring stays on the current week.
+- Day chevrons step ±1 week / ±1 month; subhead segmented control flips between routes in lock-step with the tab bar.
+
+**Known stubs (Phase 12 polish):**
+- The inline pool composer (`<PoolCompose>`) still shows duration mini-chips even at week/month scope — the values just don't get sent. Phase 12 will hide them when `scope !== 'day'`.
+- Tapping a weekly or monthly task on its day/week card doesn't open an edit sheet yet. Phase 12 wires a minimal edit/delete flow (currently you can only edit weekly/monthly tasks via the desktop modal).
 
 ---
 
