@@ -149,18 +149,36 @@ Verified by repo:
 
 ---
 
-## Phase 10 — Mobile Today ⏳ Pending
+## Phase 10 — Mobile Today ✅ Complete (pending owner smoke)
 
-- [ ] Today chrome (header, segmented subhead, stats strip).
-- [ ] `<PoolStrip scope="day">` with horizontal scroll, pool cards, `+ Add` tile, inline compose card; fresh state via `useFreshIds`.
-- [ ] Mobile timeline with 80px hours, dashed quarter lines, past wash, now-line + chip.
-- [ ] `<MobileBlock>` with `done` / `live` / `fresh` variants; tap → `<BlockDetailSheet>`.
-- [ ] FAB → `<QuickAddSheet>`.
-- [ ] `<ScheduleSheet>` — recommended slot + 3–4 alternatives + drag hint + sticky CTA. Pick → `PATCH /api/timeboxes/[id]`.
-- [ ] `src/lib/scheduler.ts` — recommended-slot finder + `tests/lib/scheduler.test.ts`.
-- [ ] `<BlockDetailSheet>` — read-mostly fields; live-state timer card with Pause / +5 min / Done; non-live shows Edit / Delete.
-- [ ] Pool→timeline drag (touch) reusing dnd-kit modifiers and conflict logic.
-- [ ] 5-step capture-and-schedule flow wired and tested E2E.
+- [x] Today chrome — header (eyebrow + title + day chevrons), segmented subhead (Day/Week/Month, Day active, Week/Month navigate via NavLink), `Live · M:SS` pill when an in-progress block exists, stats strip (Scheduled / Done / Focus, fmtDur with smaller-unit text).
+- [x] `<PoolStrip scope="day">` with horizontal scroll, pool cards, `+ Add` tile, inline compose card; fresh badge via `useFreshIds` for ~2 s after creation.
+- [x] `<MobileTimeline>` with 80 px hours, dashed q1/q2/q3 lines, past wash (full-day on past dates, up-to-now on today, none on future), now-line + chip on today, ghost block during pool drag.
+- [x] `<MobileBlock>` with `done` / `live` / `fresh` variants. Tap opens `<BlockDetailSheet>`. Live blocks get the pulsing-dot ring; done blocks get the strike-through + green check.
+- [x] FAB → `<QuickAddSheet>` (title input, duration chips, optional "Schedule" toggle that auto-picks the next free slot via `findSlots`).
+- [x] `<ScheduleSheet>` — recommended slot row (accent border, `RECOMMENDED` eyebrow with pulse dot), 3 alternatives, drag-hint footer, sticky `Schedule for X:XX pm` CTA. Pick → `PATCH /api/timeboxes/[id]`; mark fresh; close.
+- [x] `src/lib/scheduler.ts` — pure `findSlots(now, blocks, durationMin, cfg)` returning `{ recommended, alternatives[] }`. 10 / 10 unit tests in `tests/lib/scheduler.test.ts`.
+- [x] `<BlockDetailSheet>` — live timer card with `+5 min` and `Done` buttons (Pause omitted from v1 — no pause field in the data model); read-only Time field; editable Notes textarea (PATCH on blur); `Mark complete` / `Mark incomplete` CTA; footer-row `Delete block` (with confirm) and `Send to pool`.
+- [x] Pool → timeline drag using `@dnd-kit/core` with `PointerSensor (distance: 8)` and `TouchSensor (delay: 200, tolerance: 5)`. Snapping reuses `lib/timeline.ts`; conflicts respect `allowOverlap`. The dragged card lifts via `.tbm-pool-card.dragging`. Pool drop on past dates is a no-op for now (Phase 12 wires the past-day confirm).
+- [x] 5-step capture-and-schedule flow wired: tap `+ Add` → composer focuses → save → fresh pool card (~2 s) → tap → schedule sheet with recommended → pick → `PATCH` → fresh block on timeline.
+
+**Verified:**
+- `npm run build` clean. Bundles: `index.js` 346 KB / 108 KB gz (main); `MobileShell.js` 14.9 KB / 4.5 KB gz (chunked, contains the three sheets); `MobileShell.css` 20 KB only loaded by mobile.
+- `npm test --run` — 33 / 33 tests green (`time`, `timeline`, `completion`, `scheduler`).
+
+**Owner smoke (do once on a phone-sized viewport):**
+- Tap `+ Add` in the pool → composer focuses → type a title → tap a duration mini-chip → Save → new pool card has `New` badge for ~2 s.
+- Tap the new pool card → schedule sheet opens with a sensible recommended slot for today → pick recommended → block lands fresh on the timeline at the chosen time.
+- Tap a live block (one that contains `now`) → BlockDetail opens with running timer → tap `Done` → state flips, sheet closes, block shows strike-through + check.
+- FAB → QuickAdd → enter title → leave the Schedule toggle off → Save → task lands in pool, not on timeline.
+- Long-press a pool card → drag onto the timeline at, say, 11:30 am → release → block snaps to 11:30. Drag onto an occupied 11:00–11:45 block (with `allowOverlap` off) → ghost goes warn-coloured, drop rejected.
+- Day chevrons navigate ±1 day; segmented `Week` / `Month` jump between routes.
+
+**Known stubs / Phase 12 polish:**
+- Past-day drop is a silent no-op (no confirm dialog yet); compare desktop's `confirmIfPast` modal.
+- `Pause` is not in the data model; the live timer card shows `+5 min` / `Done` only.
+- QuickAdd's `Schedule` toggle uses the recommended slot — Phase 12 may add a manual time picker.
+- Sheet drag-to-dismiss (handle-pull) is still decorative — Phase 12 adds the gesture.
 
 ---
 

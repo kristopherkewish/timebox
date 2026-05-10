@@ -1,6 +1,8 @@
 import { Outlet } from 'react-router-dom';
 
-import { BottomSheet } from '@/components/mobile/sheet/BottomSheet';
+import { BlockDetailSheet } from '@/components/mobile/sheet/BlockDetailSheet';
+import { QuickAddSheet } from '@/components/mobile/sheet/QuickAddSheet';
+import { ScheduleSheet } from '@/components/mobile/sheet/ScheduleSheet';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { useSheet } from '@/hooks/useSheet';
@@ -13,29 +15,33 @@ export function MobileShell() {
   // Trigger the settings fetch once authenticated; ThemeProvider listens via QueryCache.
   useSettings(isAuthenticated);
   const sheetKind = useSheet((s) => s.kind);
+  const payload = useSheet((s) => s.payload);
 
   return (
     <div className="tbm">
       <Outlet />
       <TabBar />
-      {sheetKind && <ActiveSheet kind={sheetKind} />}
+      {sheetKind && <ActiveSheet kind={sheetKind} payload={payload} />}
     </div>
   );
 }
 
-function ActiveSheet({ kind }: { kind: string }) {
-  // Phase 9 only renders the demo sheet; Phase 10 adds quickAdd / block / schedule.
-  if (kind === 'demo') {
-    return (
-      <BottomSheet
-        title="Demo sheet"
-        body={
-          <p style={{ color: 'var(--ink-2)', margin: 0 }}>
-            BottomSheet primitive scaffolded. Tap the scrim or the close button to dismiss.
-          </p>
-        }
-      />
-    );
+function ActiveSheet({ kind, payload }: { kind: string; payload: unknown }) {
+  if (kind === 'quickAdd') return <QuickAddSheet />;
+  if (kind === 'schedule' && hasTaskId(payload)) {
+    return <ScheduleSheet taskId={payload.taskId} />;
+  }
+  if (kind === 'block' && hasTaskId(payload)) {
+    return <BlockDetailSheet taskId={payload.taskId} />;
   }
   return null;
+}
+
+function hasTaskId(p: unknown): p is { taskId: string } {
+  return (
+    typeof p === 'object' &&
+    p !== null &&
+    'taskId' in p &&
+    typeof (p as { taskId: unknown }).taskId === 'string'
+  );
 }

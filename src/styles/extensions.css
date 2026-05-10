@@ -184,6 +184,60 @@ body { font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; }
 .tb-date-step button, .tb-inbox-card, .tb-block, .tb-week-card, .tb-month-week-card,
 .tb-inbox-add { cursor: pointer; }
 
+/* ---------- Mobile (Phase 10+) extensions ---------- */
+.tbm-iconbtn, .tbm-tab, .tbm-fab, .tbm-pool-card, .tbm-pool-add,
+.tbm-pool-compose-row .mini, .tbm-pool-compose-row .save,
+.tbm-segmented button, .tbm-block, .tbm-sheet-close,
+.tbm-slot .pick, .tbm-now-card-btn, .tbm-dur-chip {
+  cursor: pointer;
+}
+
+/* Pool card while being dragged onto the timeline. Lift it visually so the
+   user can see it move across the surface. dnd-kit drives the transform; we
+   only add the elevation. */
+.tbm-pool-card.dragging {
+  z-index: 100;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  border-color: var(--accent);
+}
+
+/* Conflict ghost on the mobile timeline mirrors the desktop warn-coloured ghost. */
+.tbm-block.conflict {
+  border-color: var(--warn);
+  border-left-color: var(--warn);
+  background: color-mix(in oklab, var(--warn) 22%, transparent);
+}
+.tbm-block.conflict .tbm-block-title { color: var(--warn); }
+
+/* Notes textarea inside the mobile block-detail sheet. */
+.tbm-detail-notes {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  resize: none;
+  outline: none;
+  padding: 4px 0;
+  font-family: var(--font-sans);
+}
+.tbm-detail-notes::placeholder { color: var(--ink-4); }
+
+/* Footer text-links inside sheets. */
+.tbm-text-link {
+  background: transparent;
+  border: 0;
+  padding: 6px 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.tbm-text-link.danger { color: var(--warn); }
+
 /* ---------- Settings ---------- */
 .settings-wrap {
   padding: 24px 32px 64px;
