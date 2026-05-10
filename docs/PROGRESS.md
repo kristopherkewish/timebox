@@ -126,6 +126,69 @@ Verified by repo:
 
 ---
 
+## Phase 9 — Mobile shell foundation ✅ Complete (pending owner smoke)
+
+- [x] Moved `components/{daily,weekly,monthly,shell,icons}/` → `components/desktop/...`. All imports updated.
+- [x] `App.tsx` selects `<DesktopShell>` or `<MobileShell>` from `matchMedia('(max-width: 820px)')` via `useIsMobile()`; both lazy-loaded; `?shell=mobile|desktop` query override wins over the media query.
+- [x] `MobileShell.tsx` (`.tbm` root, hosts `<Outlet/>` + tab bar + active sheet, side-effect imports `mobile.css`). `TabBar.tsx` with 4 NavLink-driven tabs (Today/Week/Month/Me, inline SVGs matching the design handoff's `Icon` set).
+- [x] `src/styles/mobile.css` copied byte-for-byte from `Personal Timebox App Mobile/design_handoff_timebox_mobile/styles/mobile.css`. Side-effect imported inside `MobileShell`, so it splits into its own chunk (~20 KB) and does not load on desktop.
+- [x] `BottomSheet.tsx` (handle, head with title + close, body slot, optional CTA, scrim). Open/close via `useSheet`. Drag-to-dismiss is deferred to Phase 12 — handle is decorative for now.
+- [x] `useSheet` Zustand store (single-slot `{ kind, payload } | null`, `open` / `close` actions). `useFreshIds` Zustand store (set with per-id 2s `setTimeout` cleanup; `useIsFresh(id)` selector helper).
+- [x] Auth pages (`/sign-in`, `/sign-up`) reflow under 540px in `extensions.css` — card drops border/shadow/radius and fills the viewport; inputs and buttons widen to 42 / 44 px.
+- [x] Placeholder mobile pages (`MobileTodayPage`, `MobileWeekPage`, `MobileMonthPage`) render the `.tbm-header` + `.tbm-scroll` shell with a "Phase 10/11" eyebrow. `MePage` is `<Navigate to="/settings" replace />` for now.
+
+**Verified:**
+- `npm run build` clean. Bundle splits as expected: `index-*.js` 335 KB (gz 104 KB) main, `Shell-*.js` 1.5 KB desktop chunk, `MobileShell-*.js` 3.5 KB mobile chunk, `MobileShell-*.css` 20 KB mobile-only stylesheet.
+- `npm test --run` — 23/23 tests green across `time`, `timeline`, `completion`.
+
+**Owner smoke (do once):** open the app at viewport ≤820px → mobile shell mounts; tabs navigate; demo sheet opens from "Open demo sheet" button on Today and dismisses via scrim or close. Append `?shell=desktop` on a phone to force desktop, `?shell=mobile` on a wide window to force mobile. Auth pages render full-bleed at 393×852.
+
+**Known stubs (handled in later phases):**
+- Tapping the "Me" tab redirects to `/settings`, which renders the desktop-shaped `SettingsPage` inside the `.tbm` shell — Phase 12 reshapes this as a real `<MePage>`.
+- The "Open demo sheet" button on `MobileTodayPage` exists only to verify the `BottomSheet` primitive; Phase 10 replaces the page wholesale.
+
+---
+
+## Phase 10 — Mobile Today ⏳ Pending
+
+- [ ] Today chrome (header, segmented subhead, stats strip).
+- [ ] `<PoolStrip scope="day">` with horizontal scroll, pool cards, `+ Add` tile, inline compose card; fresh state via `useFreshIds`.
+- [ ] Mobile timeline with 80px hours, dashed quarter lines, past wash, now-line + chip.
+- [ ] `<MobileBlock>` with `done` / `live` / `fresh` variants; tap → `<BlockDetailSheet>`.
+- [ ] FAB → `<QuickAddSheet>`.
+- [ ] `<ScheduleSheet>` — recommended slot + 3–4 alternatives + drag hint + sticky CTA. Pick → `PATCH /api/timeboxes/[id]`.
+- [ ] `src/lib/scheduler.ts` — recommended-slot finder + `tests/lib/scheduler.test.ts`.
+- [ ] `<BlockDetailSheet>` — read-mostly fields; live-state timer card with Pause / +5 min / Done; non-live shows Edit / Delete.
+- [ ] Pool→timeline drag (touch) reusing dnd-kit modifiers and conflict logic.
+- [ ] 5-step capture-and-schedule flow wired and tested E2E.
+
+---
+
+## Phase 11 — Mobile Week + Month ⏳ Pending
+
+- [ ] Mobile Week: header, week strip (7 day pills with task pips), `<PoolStrip scope="week">`, week-card list.
+- [ ] Pool→day drag for Week (`PATCH /api/weekly-tasks/[id]`).
+- [ ] Mobile Month: header, `<PoolStrip scope="month">`, vertical week-card list, current-week accent ring.
+- [ ] Pool→week drag for Month (`PATCH /api/monthly-tasks/[id]`).
+- [ ] Subhead segmented control wired to NavLink (mirrors tab bar).
+- [ ] QuickAdd Day/Time fields hidden when `scope !== 'day'` (per §8.2 / §9.2 — no scheduling at week/month level).
+
+---
+
+## Phase 12 — Mobile Me + polish + verification ⏳ Pending
+
+- [ ] `<MePage>` reflowing settings (Appearance / Timeline / Week & Calendar / Account) for narrow viewport.
+- [ ] Existing modals (change password, delete account, export) get a media query in `extensions.css` so they take full sheet area at <540px.
+- [ ] Sheet drag-to-dismiss (handle pointer-drag past 40%, spring-back otherwise).
+- [ ] Touch-target audit (≥44×44 hit halo on visual 40px / 32px buttons).
+- [ ] State animations: live-block pulse, fresh halo decay, completion check scale-in.
+- [ ] Safe-area insets on tab bar + FAB via `env(safe-area-inset-bottom)`.
+- [ ] Themes × accents pass on all four mobile views.
+- [ ] Performance pass on Chrome DevTools mobile emulator.
+- [ ] Real-device smoke test (user-driven).
+
+---
+
 ## Open notes / gotchas
 
 Captured here so future sessions don't relearn:

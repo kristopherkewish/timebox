@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Timebox Mobile — Web app on phone</title>
+<link rel="stylesheet" href="styles/tokens.css" />
+<link rel="stylesheet" href="styles/app.css" />
+<link rel="stylesheet" href="styles/mobile.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #EDEDE9; }
+  body { font-family: 'Geist', system-ui, sans-serif; color: #161513; }
+  #app { width: 100vw; height: 100vh; }
+
+  /* The mobile app sits inside the iOS safe area; the browser chrome (Safari URL bar)
+     is rendered as a thin bar so reviewers see this is a *web app* on a phone, not a native app. */
+  .ios-safari-chrome {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 44px;
+    background: rgba(247, 247, 245, 0.86);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 0.5px solid rgba(60,60,67,0.18);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 16px;
+    z-index: 70;
+    pointer-events: none;
+  }
+  .ios-safari-url {
+    height: 30px; padding: 0 12px;
+    border-radius: 10px;
+    background: rgba(118,118,128,0.12);
+    color: #161513;
+    font-size: 13px;
+    font-family: -apple-system, system-ui, 'Geist', sans-serif;
+    display: inline-flex; align-items: center; gap: 6px;
+    width: 88%;
+    justify-content: center;
+  }
+  .ios-safari-url .lock {
+    width: 11px; height: 11px;
+    display: inline-block; opacity: 0.55;
+  }
+  .ios-frame-host { display: flex; align-items: flex-start; justify-content: center; padding: 24px 0; }
+  .ios-frame-host .ios-shell {
+    position: relative;
+  }
+
+  /* Inside-iOS app surface: subtract status (47) + safari (44) + home (34) */
+  .mobile-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Section eyebrow above each artboard label */
+  .scene-note {
+    font-size: 12px; line-height: 1.45;
+    color: #44423E;
+    max-width: 360px;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="components/sample-data.jsx"></script>
+<script type="text/babel" src="components/mobile.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "accent": "orange",
+  "showBrowserChrome": true
+}/*EDITMODE-END*/;
+
+/* iOS device wrapper that hosts a mobile screen. The screen sits between
+   the device status bar and the (optional) Safari URL chrome, so the layout
+   reads as a real mobile-web context. */
+function PhoneStage({ children, dark = false, showBrowserChrome = true }) {
+  // iOS device is 402x874. Status bar ~62px, home indicator ~34px.
+  // We give the app the full body and overlay the Safari chrome bar on top
+  // of the bottom area (just above the home indicator) when enabled.
+  return (
+    <IOSDevice width={402} height={874} dark={dark}>
+      <div style={{ height: '100%', position: 'relative', paddingTop: 47 }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, top: 47, bottom: showBrowserChrome ? 78 : 34 }}>
+          <div className="mobile-stage">
+            {children}
+          </div>
+        </div>
+        {showBrowserChrome && (
+          <div className="ios-safari-chrome" style={{ bottom: 34 }}>
+            <div className="ios-safari-url">
+              <svg className="lock" viewBox="0 0 16 16" fill="none"><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.4"/><rect x="3.5" y="7" width="9" height="6" rx="1.4" stroke="currentColor" strokeWidth="1.4"/></svg>
+              timebox.app
+            </div>
+          </div>
+        )}
+      </div>
+    </IOSDevice>
+  );
+}
+
+function Themed({ theme = 'light', accent = 'orange', children }) {
+  return (
+    <div className="tb-app" data-theme={theme} data-accent={accent} style={{ width: '100%', height: '100%' }}>
+      {children}
+    </div>
+  );
+}
+
+/* --------------------------- Hero (overview) --------------------------- */
+function HeroOverview({ theme, accent, showBrowserChrome }) {
+  return (
+    <div style={{
+      padding: '64px 80px',
+      background: 'linear-gradient(180deg, #F2F1ED 0%, #EDEDE9 100%)',
+      width: '100%', minHeight: '100%',
+      display: 'flex', flexDirection: 'column', gap: 48,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 80, flexWrap: 'wrap' }}>
+        <div style={{ maxWidth: 720 }}>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#7A776F', fontWeight: 500, marginBottom: 12 }}>
+            Timebox · Mobile web · v1
+          </div>
+          <h1 style={{ fontSize: 56, lineHeight: 1.02, margin: 0, fontWeight: 600, letterSpacing: '-0.025em', color: '#161513' }}>
+            The same Timebox,<br/>in your pocket.
+          </h1>
+          <p style={{ fontSize: 16, lineHeight: 1.55, color: '#44423E', maxWidth: 620, marginTop: 18 }}>
+            A responsive web build of Timebox, optimized for one-handed phone use. Same vocabulary as the desktop app — timeline, inbox, week, month — collapsed onto a tab bar with a now-playing card and a quick-add sheet doing the heavy lifting.
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#44423E' }}>
+          <div style={{ display: 'flex', gap: 18 }}>
+            <span style={{ color: '#7A776F' }}>Viewport</span>
+            <span style={{ fontFamily: 'Geist Mono, monospace' }}>402 × 874 (iPhone 16)</span>
+          </div>
+          <div style={{ display: 'flex', gap: 18 }}>
+            <span style={{ color: '#7A776F' }}>Engine</span>
+            <span style={{ fontFamily: 'Geist Mono, monospace' }}>iOS Safari 17 · Chrome Android</span>
+          </div>
+          <div style={{ display: 'flex', gap: 18 }}>
+            <span style={{ color: '#7A776F' }}>Min target</span>
+            <span style={{ fontFamily: 'Geist Mono, monospace' }}>44 × 44 px</span>
+          </div>
+          <div style={{ display: 'flex', gap: 18 }}>
+            <span style={{ color: '#7A776F' }}>Tokens</span>
+            <span style={{ fontFamily: 'Geist Mono, monospace' }}>shared with desktop</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+        {[
+          { t: 'Pool above the plan', d: 'Each view (Day, Week, Month) keeps the desktop\u2019s left rail of unscheduled tasks — collapsed into a horizontal scroll strip above the timeline. No separate Inbox tab; the bucket follows the view you\u2019re in.' },
+          { t: 'Tab bar mirrors the rail', d: 'Today / Week / Month / Me. Same destinations and ordering as the desktop rail, never more than one tap away.' },
+          { t: 'Sheets, not modals', d: 'Quick-add and block detail are bottom sheets \u2014 keyboard pushes them up cleanly and dismissal is a familiar swipe-down gesture.' },
+        ].map(c => (
+          <div key={c.t} style={{ background: 'white', borderRadius: 14, padding: 22, border: '1px solid #E6E4DD' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em', marginBottom: 6 }}>{c.t}</div>
+            <div style={{ fontSize: 13, color: '#44423E', lineHeight: 1.5 }}>{c.d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------- Tweaks panel --------------------------- */
+function TweaksUI({ tweaks, setTweak }) {
+  return (
+    <TweaksPanel>
+      <TweakSection label="Theme"/>
+      <TweakRadio
+        label="Mode"
+        value={tweaks.theme}
+        onChange={v => setTweak('theme', v)}
+        options={['light', 'dark']}
+      />
+      <TweakSection label="Accent"/>
+      <TweakSelect
+        label="Color"
+        value={tweaks.accent}
+        onChange={v => setTweak('accent', v)}
+        options={['orange','amber','green','teal','blue','indigo','violet','rose','slate']}
+      />
+      <TweakSection label="Frame"/>
+      <TweakToggle
+        label="Show Safari URL bar"
+        value={tweaks.showBrowserChrome}
+        onChange={v => setTweak('showBrowserChrome', v)}
+      />
+    </TweaksPanel>
+  );
+}
+
+/* --------------------------- App --------------------------- */
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const dark = tweaks.theme === 'dark';
+
+  const wrap = (node) => (
+    <Themed theme={tweaks.theme} accent={tweaks.accent}>
+      <PhoneStage dark={dark} showBrowserChrome={tweaks.showBrowserChrome}>
+        {node}
+      </PhoneStage>
+    </Themed>
+  );
+
+  // iOS frame is ~402x874; give artboards a little padding around it
+  const W = 460, H = 940;
+
+  return (
+    <React.Fragment>
+      <DesignCanvas title="Timebox Mobile" subtitle="Web app on phone — Today, Inbox, Quick add, Block detail, Week, Month">
+
+        <DCSection id="overview" title="Overview">
+          <DCArtboard id="hero" label="Mobile design overview" width={1200} height={620}>
+            <HeroOverview theme={tweaks.theme} accent={tweaks.accent} showBrowserChrome={tweaks.showBrowserChrome}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="flow" title="Flow — capture, then schedule (without quick-add)">
+          <DCArtboard id="flow-1" label="1 · Tap + Add in today's pool" width={W} height={H}>
+            {wrap(<MobileToday withFab={false} activeTab="today" flow="normal"/>)}
+          </DCArtboard>
+          <DCArtboard id="flow-2" label="2 · Inline composer in the pool" width={W} height={H}>
+            {wrap(<MobileToday withFab={false} activeTab="today" flow="compose"/>)}
+          </DCArtboard>
+          <DCArtboard id="flow-3" label="3 · New task lands in pool, unscheduled" width={W} height={H}>
+            {wrap(<MobileToday withFab={false} activeTab="today" flow="pool-fresh"/>)}
+          </DCArtboard>
+          <DCArtboard id="flow-4" label="4 · Tap the pool card → schedule sheet with suggested slots" width={W} height={H}>
+            {wrap(<MobileScheduleSheet/>)}
+          </DCArtboard>
+          <DCArtboard id="flow-5" label="5 · Task scheduled — block on timeline at 12:45 pm" width={W} height={H}>
+            {wrap(<MobileToday withFab={false} activeTab="today" flow="scheduled"/>)}
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="primary" title="Primary screens — Today">
+          <DCArtboard id="today" label="Today · with day pool + timeline" width={W} height={H}>
+            {wrap(<MobileToday withFab={true} activeTab="today"/>)}
+          </DCArtboard>
+          <DCArtboard id="quick-add" label="Quick add — bottom sheet" width={W} height={H}>
+            {wrap(<MobileQuickAdd/>)}
+          </DCArtboard>
+          <DCArtboard id="detail" label="Block detail — bottom sheet" width={W} height={H}>
+            {wrap(<MobileBlockDetail/>)}
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="planning" title="Planning — Week, Month">
+          <DCArtboard id="week" label="Week view · with weekly pool" width={W} height={H}>
+            {wrap(<MobileWeek/>)}
+          </DCArtboard>
+          <DCArtboard id="month" label="Month view · with monthly pool" width={W} height={H}>
+            {wrap(<MobileMonth/>)}
+          </DCArtboard>
+        </DCSection>
+
+      </DesignCanvas>
+      <TweaksUI tweaks={tweaks} setTweak={setTweak}/>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
+</script>
+</body>
+</html>

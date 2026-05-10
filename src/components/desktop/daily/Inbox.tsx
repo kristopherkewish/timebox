@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { Icon } from '@/components/icons/Icon';
+import { Icon } from '@/components/desktop/icons/Icon';
 import { fmtDur } from '@/lib/time';
 import { InboxCard } from './InboxCard';
 import type { Timebox } from '@/hooks/useDaily';

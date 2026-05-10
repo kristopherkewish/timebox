@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Icon } from '@/components/icons/Icon';
+import { Icon } from '@/components/desktop/icons/Icon';
 import { fmtDur, fmtTime } from '@/lib/time';
 import { minutesToPx } from '@/lib/timeline';
 import type { BlockState } from '@/lib/completion';

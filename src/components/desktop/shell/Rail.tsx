@@ -1,6 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
-import { Icon } from '@/components/icons/Icon';
+import { Icon } from '@/components/desktop/icons/Icon';
 import { useAuth } from '@/hooks/useAuth';
 
 const NAV_ITEMS = [

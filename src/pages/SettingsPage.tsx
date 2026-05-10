@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '@/components/shell/Header';
+import { Header } from '@/components/desktop/shell/Header';
 import { ACCENTS, useTheme } from '@/lib/theme';
 import type { Accent } from '@/lib/theme';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';

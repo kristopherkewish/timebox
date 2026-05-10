@@ -1,0 +1,949 @@
+/* ==========================================================================
+   Timebox Mobile — web app on phone (iOS Safari, Android Chrome)
+   Reuses tokens from tokens.css. Touch targets ≥44px.
+   ========================================================================== */
+
+.tbm {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   App header (top of viewport, below the device status bar)
+   ─────────────────────────────────────────────────────────── */
+.tbm-header {
+  flex-shrink: 0;
+  padding: 8px 20px 12px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tbm-header-l {
+  display: flex; flex-direction: column; gap: 1px; min-width: 0;
+}
+.tbm-eyebrow {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--ink-3); font-weight: 500;
+}
+.tbm-title {
+  font-size: 22px; line-height: 1.1; color: var(--ink);
+  font-weight: 600; letter-spacing: -0.02em;
+}
+.tbm-iconbtn {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: grid; place-items: center;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+.tbm-iconbtn.solid {
+  background: var(--ink); color: var(--bg); border-color: var(--ink);
+}
+.tbm-iconbtn.accent {
+  background: var(--accent); color: white; border-color: var(--accent);
+}
+.tbm-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent); color: white;
+  display: grid; place-items: center;
+  font-weight: 600; font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Date stepper / segmented row sitting under the header */
+.tbm-subhead {
+  flex-shrink: 0;
+  padding: 0 20px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tbm-segmented {
+  display: inline-flex; padding: 3px;
+  background: var(--surface-sunken);
+  border-radius: 10px;
+  gap: 2px;
+}
+.tbm-segmented button {
+  height: 30px; padding: 0 14px;
+  border: 0; background: transparent;
+  font-size: 12px; font-weight: 500;
+  color: var(--ink-3);
+  border-radius: 7px;
+  font-family: inherit;
+}
+.tbm-segmented button.active {
+  background: var(--surface); color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.tbm-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 12px; font-weight: 500;
+}
+.tbm-pill .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+/* ─────────────────────────────────────────────────────────────
+   Stats strip (beneath subhead)
+   ─────────────────────────────────────────────────────────── */
+.tbm-stats {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin: 0 20px 14px;
+  padding: 12px 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.tbm-stat {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 0 6px;
+  border-right: 1px solid var(--line);
+}
+.tbm-stat:last-child { border-right: 0; }
+.tbm-stat-value {
+  font-size: 18px; line-height: 1;
+  font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.tbm-stat-value .unit { font-size: 11px; color: var(--ink-3); margin-left: 1px; font-weight: 500; }
+.tbm-stat-label {
+  font-size: 9.5px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Scrollable body
+   ─────────────────────────────────────────────────────────── */
+.tbm-scroll {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+.tbm-scroll-pad {
+  padding-bottom: 100px; /* room for tab bar + FAB */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Mobile timeline — narrower, denser hours
+   ─────────────────────────────────────────────────────────── */
+.tbm-timeline {
+  position: relative;
+  padding: 4px 20px 4px 56px;
+  --hour: 80px;
+}
+.tbm-hour {
+  position: relative;
+  height: var(--hour);
+  border-top: 1px solid var(--line);
+}
+.tbm-hour:last-child { border-bottom: 1px solid var(--line); }
+.tbm-hour-label {
+  position: absolute; left: -44px; top: -7px;
+  width: 36px; text-align: right;
+  font-size: 10.5px; font-variant-numeric: tabular-nums;
+  color: var(--ink-3); font-weight: 500;
+}
+.tbm-hour .tbm-q {
+  position: absolute; left: 0; right: 0;
+  border-top: 1px dashed var(--line);
+  opacity: 0.6;
+}
+.tbm-hour .tbm-q.q1 { top: 25%; }
+.tbm-hour .tbm-q.q2 { top: 50%; opacity: 0.85; }
+.tbm-hour .tbm-q.q3 { top: 75%; }
+
+/* Now indicator */
+.tbm-now {
+  position: absolute; left: -10px; right: 0;
+  border-top: 1.5px solid var(--accent);
+  z-index: 6; pointer-events: none;
+}
+.tbm-now::before {
+  content: ''; position: absolute; left: -4px; top: -5px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+.tbm-now-label {
+  position: absolute; left: -44px; top: -7px;
+  width: 36px; text-align: right;
+  font-size: 10.5px; font-variant-numeric: tabular-nums;
+  font-weight: 600; color: var(--accent);
+  background: var(--bg); padding: 1px 0;
+}
+
+/* Past wash */
+.tbm-past {
+  position: absolute; left: -10px; right: 0; top: 0;
+  background: color-mix(in oklab, var(--ink) 3%, transparent);
+  pointer-events: none; z-index: 1;
+}
+
+/* Block on timeline */
+.tbm-block {
+  position: absolute;
+  left: 4px; right: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 8px 12px;
+  overflow: hidden;
+  z-index: 2;
+  box-shadow: var(--shadow-sm);
+}
+.tbm-block-title {
+  font-size: 13.5px; font-weight: 500; color: var(--ink);
+  line-height: 1.25; letter-spacing: -0.005em;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tbm-block-meta {
+  font-size: 11px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.tbm-check {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1.5px solid var(--ink-4);
+  display: inline-grid; place-items: center;
+  flex-shrink: 0; font-size: 8px; color: transparent;
+}
+.tbm-block.done {
+  background: var(--surface-2);
+  border-color: var(--line);
+  border-left-color: var(--success);
+  opacity: 0.78;
+}
+.tbm-block.done .tbm-block-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-4);
+  color: var(--ink-2);
+}
+.tbm-block.done .tbm-check {
+  background: var(--success); color: white; border-color: var(--success);
+}
+.tbm-block.live {
+  border-left-color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent), var(--shadow-md);
+  z-index: 4;
+}
+.tbm-block.live::after {
+  content: '';
+  position: absolute; right: 10px; top: 12px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Now-playing card (top of Today view when something is in progress)
+   ─────────────────────────────────────────────────────────── */
+.tbm-now-card {
+  margin: 0 20px 14px;
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: 16px;
+  padding: 16px 18px 14px;
+  position: relative;
+  overflow: hidden;
+}
+.tbm-now-card-eyebrow {
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.14em; font-weight: 600;
+  color: var(--accent);
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px;
+}
+.tbm-now-card-eyebrow .live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 30%, transparent);
+}
+.tbm-now-card-title {
+  font-size: 17px; font-weight: 600;
+  letter-spacing: -0.015em; line-height: 1.25;
+  margin-bottom: 10px;
+}
+.tbm-now-card-time {
+  display: flex; align-items: baseline; gap: 8px;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 12px;
+}
+.tbm-now-card-time .big {
+  font-size: 30px; font-weight: 600; letter-spacing: -0.02em;
+  color: white;
+}
+.tbm-now-card-time .small {
+  font-size: 12px; color: rgba(255,255,255,0.55);
+}
+.tbm-progress {
+  height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.15);
+  overflow: hidden; position: relative;
+  margin-bottom: 14px;
+}
+.tbm-progress-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.tbm-now-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.tbm-now-card-btn {
+  height: 40px; border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: white;
+  font-size: 12.5px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: inherit;
+}
+.tbm-now-card-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   List rows (Inbox, Block detail items)
+   ─────────────────────────────────────────────────────────── */
+.tbm-list {
+  margin: 0 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.tbm-list + .tbm-list { margin-top: 14px; }
+.tbm-list-header {
+  padding: 14px 18px 6px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.tbm-list-title {
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.tbm-list-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  min-height: 56px;
+  position: relative;
+}
+.tbm-list-row:first-child { border-top: 0; }
+.tbm-list-row .grip {
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  color: var(--ink-4);
+  flex-shrink: 0;
+}
+.tbm-list-row .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tbm-list-row .ttl {
+  font-size: 14.5px; font-weight: 500; color: var(--ink);
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
+.tbm-list-row .meta {
+  font-size: 11.5px; color: var(--ink-3);
+  display: flex; align-items: center; gap: 8px;
+}
+.tbm-list-row .dur {
+  font-variant-numeric: tabular-nums; font-weight: 500; color: var(--ink-2);
+}
+.tbm-list-row .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-4); }
+.tbm-list-row .right {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 6px;
+}
+.tbm-chip {
+  height: 28px; padding: 0 10px;
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  border-radius: 999px;
+  font-size: 11.5px; font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.tbm-chip.accent {
+  background: var(--accent-soft);
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
+  color: var(--accent-ink);
+}
+.tbm-chip.success {
+  background: var(--success-soft);
+  border-color: color-mix(in oklab, var(--success) 30%, transparent);
+  color: var(--success);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Pool strip — unscheduled tasks scoped to the current view
+   (mirror of the desktop left rail, laid horizontally)
+   ─────────────────────────────────────────────────────────── */
+.tbm-pool {
+  flex-shrink: 0;
+  padding: 4px 0 14px;
+  background: var(--bg);
+  position: relative;
+}
+.tbm-pool-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px 8px;
+  gap: 12px;
+}
+.tbm-pool-title {
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--ink-3);
+  font-weight: 600;
+}
+.tbm-pool-count {
+  font-size: 11px;
+  color: var(--ink-3);
+  background: var(--surface-sunken);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.tbm-pool-link {
+  font-size: 12px;
+  color: var(--ink-2);
+  font-weight: 500;
+  display: inline-flex; align-items: center; gap: 2px;
+}
+.tbm-pool-scroll {
+  display: flex; gap: 8px;
+  padding: 2px 20px 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tbm-pool-scroll::-webkit-scrollbar { display: none; }
+
+.tbm-pool-card {
+  flex-shrink: 0;
+  width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px 10px 13px;
+  display: flex; flex-direction: column; gap: 4px;
+  position: relative;
+  /* left accent strip — same vocabulary as the timeline blocks */
+}
+.tbm-pool-card::before {
+  content: '';
+  position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 3px; border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+.tbm-pool-card.muted::before { background: var(--ink-4); }
+.tbm-pool-card.success::before { background: var(--success); }
+.tbm-pool-card.info::before { background: var(--info); }
+
+.tbm-pool-card-title {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink); line-height: 1.3;
+  letter-spacing: -0.005em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tbm-pool-card-meta {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--ink-3);
+}
+.tbm-pool-card-meta .dur {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.tbm-pool-card-meta .dot {
+  width: 3px; height: 3px; border-radius: 50%; background: var(--ink-4);
+}
+.tbm-pool-add {
+  flex-shrink: 0;
+  width: 200px;
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 500;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: transparent;
+  font-family: inherit;
+  min-height: 60px;
+}
+
+/* Pool — inline compose (replaces the "+ Add" card while typing) */
+.tbm-pool-compose {
+  flex-shrink: 0;
+  width: 240px;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 12%, transparent);
+}
+.tbm-pool-compose input {
+  width: 100%;
+  border: 0; background: transparent; padding: 0;
+  font-family: inherit;
+  font-size: 13.5px; font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.tbm-pool-compose input::placeholder { color: var(--ink-4); }
+.tbm-pool-compose-row {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+}
+.tbm-pool-compose-row .mini {
+  height: 24px; padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 11px; font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  display: inline-flex; align-items: center;
+}
+.tbm-pool-compose-row .mini.active {
+  background: var(--ink); color: var(--bg); border-color: var(--ink);
+}
+.tbm-pool-compose-row .save {
+  margin-left: auto;
+  height: 26px; padding: 0 10px;
+  border: 0; border-radius: 999px;
+  background: var(--accent); color: white;
+  font-size: 11.5px; font-weight: 600;
+  font-family: inherit;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+
+/* Pool card — fresh state (just added) */
+.tbm-pool-card.fresh {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+.tbm-pool-card.fresh .tbm-pool-card-meta .badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 18px; padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+/* Block — fresh state (just scheduled, briefly emphasized) */
+.tbm-block.fresh {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent),
+              0 0 0 6px color-mix(in oklab, var(--accent) 14%, transparent),
+              var(--shadow-md);
+  z-index: 5;
+}
+.tbm-block.fresh .tbm-block-title { color: var(--accent-ink); font-weight: 600; }
+
+/* Schedule sheet — slot picker rows */
+.tbm-slot {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  margin-bottom: 8px;
+}
+.tbm-slot.recommended {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 6%, var(--surface));
+}
+.tbm-slot-time {
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.01em; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  width: 92px;
+  flex-shrink: 0;
+}
+.tbm-slot-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tbm-slot-info .ttl { font-size: 12.5px; color: var(--ink-2); font-weight: 500; }
+.tbm-slot-info .sub { font-size: 11px; color: var(--ink-3); }
+.tbm-slot .pick {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--ink);
+  color: var(--bg);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.tbm-slot.recommended .pick { background: var(--accent); }
+.tbm-slot-eyebrow {
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--accent-ink);
+  font-weight: 600;
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-bottom: 4px;
+}
+.tbm-slot-eyebrow .pulse {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+}
+
+.tbm-slots-other {
+  font-size: 11px; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  font-weight: 600;
+  padding: 8px 4px 6px;
+}
+
+.tbm-drag-hint {
+  margin: 4px 0 0;
+  padding: 10px 14px;
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  color: var(--ink-3);
+  font-size: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Bottom tab bar (fixed at viewport bottom)
+   ─────────────────────────────────────────────────────────── */
+.tbm-tabbar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--line);
+  padding: 6px 8px 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  z-index: 30;
+}
+.tbm-tab {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px;
+  height: 52px;
+  color: var(--ink-3);
+  border: 0; background: transparent;
+  font-family: inherit;
+}
+.tbm-tab.active { color: var(--ink); }
+.tbm-tab .lbl {
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.005em;
+}
+
+/* FAB — quick add (above the tab bar) */
+.tbm-fab {
+  position: absolute;
+  right: 18px;
+  bottom: 78px;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: grid; place-items: center;
+  box-shadow: 0 8px 24px color-mix(in oklab, var(--accent) 35%, transparent),
+              0 2px 6px rgba(0,0,0,0.15);
+  z-index: 25;
+  border: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Bottom sheet (overlays the screen)
+   ─────────────────────────────────────────────────────────── */
+.tbm-scrim {
+  position: absolute; inset: 0;
+  background: rgba(15, 15, 15, 0.32);
+  z-index: 40;
+}
+.tbm-sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: var(--surface);
+  border-radius: 22px 22px 0 0;
+  z-index: 50;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column;
+  max-height: 78%;
+  padding-bottom: 18px;
+}
+.tbm-sheet-handle {
+  align-self: center;
+  width: 44px; height: 5px;
+  border-radius: 999px;
+  background: var(--line-2);
+  margin: 8px auto 4px;
+}
+.tbm-sheet-head {
+  padding: 6px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.tbm-sheet-title {
+  font-size: 17px; font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.tbm-sheet-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface-2);
+  display: grid; place-items: center;
+  color: var(--ink-2);
+  border: 0;
+}
+.tbm-sheet-body {
+  padding: 0 20px 8px;
+  display: flex; flex-direction: column; gap: 16px;
+  overflow: auto;
+}
+
+.tbm-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  font-family: inherit;
+  padding: 0;
+}
+.tbm-input::placeholder { color: var(--ink-4); }
+
+.tbm-field {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--line);
+  min-height: 52px;
+}
+.tbm-field-icon {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  color: var(--ink-3);
+}
+.tbm-field-label {
+  flex: 1; color: var(--ink-2);
+  font-size: 14px;
+}
+.tbm-field-value {
+  font-size: 14px; color: var(--ink); font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.tbm-field-value .muted { color: var(--ink-3); font-weight: 400; margin-left: 6px; }
+
+.tbm-chips-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 4px 0 8px;
+}
+.tbm-dur-chip {
+  height: 38px; padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px; font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.tbm-dur-chip.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+.tbm-sheet-cta {
+  margin: 6px 20px 0;
+  height: 50px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: white;
+  border: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Week view (vertical day cards)
+   ─────────────────────────────────────────────────────────── */
+.tbm-week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 0 16px 14px;
+  flex-shrink: 0;
+}
+.tbm-week-day {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px;
+  padding: 8px 0 6px;
+  border-radius: 10px;
+  background: transparent;
+}
+.tbm-week-day .dow {
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--ink-3);
+  font-weight: 500;
+}
+.tbm-week-day .num {
+  font-size: 16px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.tbm-week-day .pips {
+  display: flex; gap: 2px; height: 4px; margin-top: 2px;
+}
+.tbm-week-day .pip { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-4); }
+.tbm-week-day.today {
+  background: var(--ink);
+}
+.tbm-week-day.today .dow,
+.tbm-week-day.today .num { color: var(--bg); }
+.tbm-week-day.today .pip { background: var(--accent); }
+.tbm-week-day.weekend .num { color: var(--ink-3); }
+
+/* Day cards within week scroll */
+.tbm-week-card {
+  margin: 0 20px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.tbm-week-card-head {
+  padding: 14px 18px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.tbm-week-card-head .l {
+  display: flex; align-items: baseline; gap: 10px; min-width: 0;
+}
+.tbm-week-card-head .num {
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.tbm-week-card-head .dow {
+  font-size: 12px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink-3);
+  font-weight: 500;
+}
+.tbm-week-card.today .num { color: var(--accent); }
+.tbm-week-card.today { box-shadow: 0 0 0 1px var(--accent); border-color: var(--accent); }
+.tbm-week-card.weekend { background: var(--surface-2); }
+.tbm-week-card-body {
+  padding: 0 14px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.tbm-week-task {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px; font-weight: 500;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.tbm-week-task.muted { border-left-color: var(--ink-4); color: var(--ink-2); }
+.tbm-week-task.success { border-left-color: var(--success); }
+.tbm-week-task.info { border-left-color: var(--info); }
+.tbm-week-task .note {
+  font-size: 11px; color: var(--ink-3); font-weight: 400; margin-top: 2px;
+}
+.tbm-week-card-empty {
+  padding: 10px 12px;
+  border: 1px dashed var(--line-2);
+  border-radius: 8px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Month view (list of weeks — same vocabulary as desktop)
+   ─────────────────────────────────────────────────────────── */
+.tbm-month-week {
+  margin: 0 20px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.tbm-month-week.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.tbm-month-week-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px;
+}
+.tbm-month-week-num {
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.02em; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.tbm-month-week.current .tbm-month-week-num { color: var(--accent); }
+.tbm-month-week-range {
+  font-size: 12px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.tbm-month-week-count {
+  font-size: 11px; color: var(--ink-3);
+}
+.tbm-month-task {
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px; font-weight: 500;
+  color: var(--ink);
+}
+.tbm-month-task.muted { border-left-color: var(--ink-4); color: var(--ink-2); }
+.tbm-month-task.success { border-left-color: var(--success); }
+.tbm-month-task.info { border-left-color: var(--info); }
+.tbm-month-task .note {
+  font-size: 11px; color: var(--ink-3); font-weight: 400; margin-top: 2px;
+}

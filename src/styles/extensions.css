@@ -128,6 +128,24 @@ body { font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; }
 }
 .auth-footer a { color: var(--accent-ink); font-weight: 500; }
 
+/* Phase 9 — auth pages reflow under 540px (phone width). The card drops its
+   border / shadow / radius and fills the viewport so the form is reachable
+   one-handed. */
+@media (max-width: 540px) {
+  .auth-page { padding: 0; place-items: stretch; }
+  .auth-card {
+    max-width: none;
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 32px 22px;
+    gap: 14px;
+  }
+  .auth-form .tb-btn { height: 44px; font-size: 14px; }
+  .auth-field input, .tb-input { height: 42px; font-size: 14px; }
+}
+
 /* ---------- Modal ---------- */
 .modal-backdrop {
   position: fixed;

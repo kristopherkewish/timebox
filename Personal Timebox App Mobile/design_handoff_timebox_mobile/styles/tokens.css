@@ -1,0 +1,113 @@
+/* ==========================================================================
+   Timebox — Design System Tokens (v2: sans-only, light + dark, accent-tweakable)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Type — sans only */
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  /* Spacing */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  /* Radius */
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --radius-xl: 20px;
+
+  /* Accent — configurable. Default: orange. */
+  --accent: #C2410C;
+  --accent-soft: #FBE6D4;
+  --accent-ink: #7A2606;
+
+  /* Light theme (default) */
+  --bg: #F7F7F5;
+  --surface: #FFFFFF;
+  --surface-2: #F2F1ED;
+  --surface-sunken: #EAE9E4;
+  --ink: #161513;
+  --ink-2: #44423E;
+  --ink-3: #7A776F;
+  --ink-4: #B0ADA4;
+  --line: #E6E4DD;
+  --line-2: #D4D1C8;
+
+  --success: #4D7C3F;
+  --success-soft: #DDEDC9;
+  --warn: #B7791F;
+  --warn-soft: #F5E5B5;
+  --info: #2563A8;
+  --info-soft: #D6E5F2;
+
+  --now: var(--accent);
+
+  --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.04);
+  --shadow-md: 0 2px 8px rgba(15, 15, 15, 0.05), 0 1px 2px rgba(15, 15, 15, 0.03);
+  --shadow-lg: 0 12px 32px rgba(15, 15, 15, 0.08), 0 4px 8px rgba(15, 15, 15, 0.03);
+  --shadow-drag: 0 16px 40px rgba(15, 15, 15, 0.14), 0 4px 12px rgba(15, 15, 15, 0.06);
+}
+
+[data-theme="dark"] {
+  --bg: #131316;
+  --surface: #1B1B1F;
+  --surface-2: #232227;
+  --surface-sunken: #0F0F12;
+  --ink: #ECEAE5;
+  --ink-2: #C2BFB7;
+  --ink-3: #8A877E;
+  --ink-4: #57544D;
+  --line: #2A292E;
+  --line-2: #3A3940;
+  --success: #8AB874;
+  --success-soft: #2A3A22;
+  --warn: #D4A24C;
+  --warn-soft: #3A2E15;
+  --info: #6FA3D9;
+  --info-soft: #1F2D3F;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-drag: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Accent presets — overlaid on top of the theme */
+[data-accent="orange"]  { --accent: #C2410C; --accent-soft: #FBE6D4; --accent-ink: #7A2606; }
+[data-accent="amber"]   { --accent: #B7791F; --accent-soft: #F5E5B5; --accent-ink: #6B4612; }
+[data-accent="green"]   { --accent: #4D7C3F; --accent-soft: #DDEDC9; --accent-ink: #2C4A23; }
+[data-accent="teal"]    { --accent: #0F766E; --accent-soft: #CCEBE7; --accent-ink: #064741; }
+[data-accent="blue"]    { --accent: #2563A8; --accent-soft: #D6E5F2; --accent-ink: #133A66; }
+[data-accent="indigo"]  { --accent: #4F46E5; --accent-soft: #DDDBF7; --accent-ink: #2D267F; }
+[data-accent="violet"]  { --accent: #7C3AED; --accent-soft: #E5DAFB; --accent-ink: #4A1F8F; }
+[data-accent="rose"]    { --accent: #BE185D; --accent-soft: #F7D4E1; --accent-ink: #6F0E37; }
+[data-accent="slate"]   { --accent: #475569; --accent-soft: #DCE0E6; --accent-ink: #2A323D; }
+
+[data-theme="dark"][data-accent="orange"]  { --accent: #F59E5C; --accent-soft: #3D2A1A; --accent-ink: #FCBF8A; }
+[data-theme="dark"][data-accent="amber"]   { --accent: #E5B25A; --accent-soft: #3A2E15; --accent-ink: #F5D38A; }
+[data-theme="dark"][data-accent="green"]   { --accent: #8AB874; --accent-soft: #2A3A22; --accent-ink: #B5D2A4; }
+[data-theme="dark"][data-accent="teal"]    { --accent: #4FB3A8; --accent-soft: #133533; --accent-ink: #82D2C8; }
+[data-theme="dark"][data-accent="blue"]    { --accent: #6FA3D9; --accent-soft: #1F2D3F; --accent-ink: #A5C7E8; }
+[data-theme="dark"][data-accent="indigo"]  { --accent: #8A82F0; --accent-soft: #1F1D40; --accent-ink: #B4ADF8; }
+[data-theme="dark"][data-accent="violet"]  { --accent: #A87CF5; --accent-soft: #2A1A4A; --accent-ink: #C9ACFA; }
+[data-theme="dark"][data-accent="rose"]    { --accent: #E06A95; --accent-soft: #3D1A2A; --accent-ink: #F0A0BD; }
+[data-theme="dark"][data-accent="slate"]   { --accent: #94A3B8; --accent-soft: #2A323D; --accent-ink: #C0CAD8; }
+
+/* Resets */
+* { box-sizing: border-box; }
+.tb-app, .tb-app * {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.tb-app {
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+}
+.tb-mono { font-family: var(--font-mono); }
+.tb-eyebrow {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+  font-weight: 500; color: var(--ink-3);
+}

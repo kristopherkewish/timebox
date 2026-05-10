@@ -10,6 +10,7 @@ These were resolved with the user up front. Don't re-litigate without asking.
 2. **No notifications in v1.** Requirements §6, §6.4, §10.3 are dropped. Web Push + Service Worker scheduling is out of scope.
 3. **Full auth per requirements §2.** Username/email + password, Argon2id hashing, cookie sessions, "remember me", change password, delete account.
 4. **§11.1 "local storage" reinterpreted.** Server-side D1 per user (since auth + multi-device implies cross-device data). Cross-device follows for free.
+5. **Mobile = single SPA, two shells (Phase 9+).** One Vite build, one Cloudflare Pages project, one set of `/api/*` Functions. `App.tsx` selects `<DesktopShell>` or `<MobileShell>` from `matchMedia('(max-width: 820px)')`; both shells are `React.lazy` so only the active one ships. Routes are the same paths in both shells (`/`, `/week`, `/month`, `/settings`). Two SPAs would fork auth, theme, settings, and the QueryClient — the non-shareable layer (markup, mobile CSS namespace, sheet/FAB/tab-bar primitives) is the same surface area either way, so the duplication isn't bought back.
 
 ## Architecture
 
@@ -187,9 +188,74 @@ export const deriveState = (now: number, block: Timebox): BlockState => {
 
 All three modules are pure → unit-tested in `tests/lib/`.
 
+Phase 10 adds a fourth pure module:
+
+`src/lib/scheduler.ts` — recommended-slot finder for the mobile schedule sheet:
+
+```ts
+export type Slot = { startMin: number; sub: string };
+export const findSlots = (
+  now: number,                                  // minutes since local midnight
+  blocks: Timebox[],                            // today's scheduled blocks
+  durationMin: number,
+  cfg: { dayStart: number; dayEnd: number; increment: number; allowOverlap: boolean }
+): { recommended: Slot | null; alternatives: Slot[] };
+```
+
+Walks the day's free intervals from `max(now, dayStart)` to `dayEnd`, snapping starts to `increment`. Returns the next interval that fits as `recommended` and up to 3 later free slots as `alternatives`, anchored to "after X" / "before Y" sub-labels for the schedule-sheet rows.
+
 ### State reconciliation
 
 §4.1 requires elapsed timeboxes auto-complete even if the app wasn't open. Web equivalent: every page load (and every minute via interval while the daily view is mounted), `useDaily()` recomputes `state` for visible blocks via `deriveState`. For past dates, the server lazily promotes any non-overridden `'upcoming'` block to `'completed'` on first read after the date is past — single `UPDATE` in the `GET /api/daily/[date]` handler. Silent (per §14.5).
+
+### Mobile shell architecture (Phase 9+)
+
+Sources: `Personal Timebox App Mobile/design_handoff_timebox_mobile/` (`README.md`, `styles/mobile.css`, `components/mobile.jsx`).
+
+**Shell selector.** `App.tsx` reads `matchMedia('(max-width: 820px)')` (with a `?shell=mobile|desktop` override for forced testing) and renders one of two lazy-loaded shells. Cookie auth, theme, settings, QueryClient, and React Router live above the shell split — they don't fork. Tablets (>820px) fall back to desktop until a tablet shell is added.
+
+**Routes.** Same paths in both shells (`/`, `/week`, `/month`, `/settings`); a `/me` alias maps to `/settings` on mobile. Auth pages (`/sign-in`, `/sign-up`) render outside both shells and reflow via media queries in `extensions.css` rather than getting a mobile port.
+
+**File layout.**
+```
+src/
+  components/
+    desktop/          # current daily/weekly/monthly/shell/icons moved under here
+    mobile/           # new
+      shell/          MobileShell.tsx, TabBar.tsx
+      sheet/          BottomSheet.tsx, QuickAddSheet.tsx,
+                      BlockDetailSheet.tsx, ScheduleSheet.tsx
+      pool/           PoolStrip.tsx, PoolCard.tsx, PoolCompose.tsx
+      today/          MobileToday.tsx, MobileTimeline.tsx, MobileBlock.tsx
+      week/           MobileWeek.tsx, WeekStrip.tsx, WeekCard.tsx
+      month/          MobileMonth.tsx, MonthWeekCard.tsx
+      me/             MePage.tsx
+  styles/
+    mobile.css        # verbatim copy of design_handoff_timebox_mobile/styles/mobile.css
+  hooks/
+    useSheet.ts       # mobile-only Zustand: { kind, payload } | null (one open at a time)
+    useFreshIds.ts    # mobile-only: Set<string> with per-id 2s expiry
+  lib/
+    scheduler.ts      # new pure fn: recommended-slot finder
+```
+
+**Reusable primitives.** Three things are explicitly built once and parameterised, per the design's implementation notes:
+
+- `<BottomSheet>` — handle, head, body slot, optional CTA, scrim. Used by Quick add, Block detail, and Schedule. Don't fork three sheet impls.
+- `<PoolStrip>` — parameterised by `scope: 'day' | 'week' | 'month'`. Only the title label and the underlying task filter change.
+- `<MobileBlock>` — single component, visual variants via `done` / `live` / `fresh` state. Same 3px-left-bar vocabulary spans `.tbm-block`, `.tbm-pool-card`, `.tbm-week-task`, `.tbm-month-task`.
+
+**State.** Server-backed state stays in the existing TanStack Query hooks (`useDaily`, `useWeekly`, `useMonthly`, `useSettings`, `useAuth`) — no fork. Mobile-only ephemeral stores: `useSheet` (single sheet slot), `useFreshIds` (auto-expiring set). Inline pool composer is local component state.
+
+**Backend.** **No schema changes, no new endpoints.** Mobile capture writes a `timebox` with `start_min = NULL` (lands in pool); schedule sheet sets `start_min`. Both already supported by the existing daily endpoints. Recommended-slot computation is a pure client function over the day's already-loaded `timebox` rows.
+
+**CSS.** `mobile.css` copied verbatim like `tokens.css` and `app.css`. Loaded inside `MobileShell` via a side-effect `import './mobile.css'` so the desktop bundle stays clean. Class namespace is `.tbm-*` and does not collide with the desktop `.tb-*` namespace; both can coexist if both shells were ever rendered together (they aren't, but the isolation is real).
+
+**Drag-and-drop.** dnd-kit is reused with `TouchSensor` + `PointerSensor`. The canonical happy path on mobile is **tap pool card → schedule sheet → pick recommended slot**, not drag — drag is the secondary path per the design's 5-step storyboard. Resize handles are not designed for mobile; resize is via the Block detail sheet's duration field instead.
+
+**Touch targets.** Every tappable element ≥44×44 logical px. 40×40 visual icon buttons get a `::before` 44px hit halo; 32×32 sheet-close and 32×32 slot-pick buttons are wrapped in a 44px hit area.
+
+**Safe-area insets.** Tab bar and FAB use `env(safe-area-inset-bottom)` so they sit above the iOS home indicator when installed as a PWA or on Safari with the URL bar collapsed.
 
 ---
 
@@ -301,6 +367,63 @@ Status is tracked in `docs/PROGRESS.md` — update there as work proceeds.
 
 **End state:** Live on a public URL, $0/month.
 
+### Phase 9 — Mobile shell foundation (~3–5 days)
+
+1. Move `components/{daily,weekly,monthly,shell,icons}/` → `components/desktop/...`. Update imports in one pass. No behaviour change.
+2. `App.tsx`: `React.lazy` both `<DesktopShell>` and `<MobileShell>`; gate by `matchMedia('(max-width: 820px)')`. Add `?shell=mobile|desktop` query override that wins over the media query (testing aid).
+3. `MobileShell.tsx` — `.tbm` root, safe-area insets, hosts the route subtree (`<Outlet/>`) and the tab bar.
+4. `TabBar.tsx` — 4 tabs (Today / Week / Month / Me) backed by NavLink. Active uses `--ink`; inactive `--ink-3`. Frosted background per `mobile.css`.
+5. Copy `Personal Timebox App Mobile/design_handoff_timebox_mobile/styles/mobile.css` verbatim into `src/styles/mobile.css`. Side-effect import inside `MobileShell`.
+6. `BottomSheet.tsx` — handle (drag-to-dismiss past 40%), head (title + close), body slot, optional sticky CTA, scrim (`rgba(15,15,15,0.32)`). Animates 250–300ms ease-out on open, reverses on close.
+7. `useSheet` (Zustand) — `{ kind: 'quickAdd' | 'block' | 'schedule', payload?: any } | null`. Single slot.
+8. `useFreshIds` (Zustand) — `Set<string>` with per-id 2s `setTimeout` cleanup; survives re-renders, cleared on route change.
+9. Auth pages (`SignInPage`, `SignUpPage`) reflow under 540px in `extensions.css` (panels stack, fill viewport, no inset shadow).
+10. Placeholder `<MePage>` route at `/me` (redirects to `/settings` for now) — kept so the tab bar's 4th tab has somewhere to land.
+
+**End state:** App opens on a phone; tab bar switches between empty Today / Week / Month placeholder routes and the Me page; `<BottomSheet>` opens and dismisses; auth pages render correctly under 540px; theme/accent persist across the shell switch.
+
+### Phase 10 — Mobile Today (~5–7 days)
+
+1. **Today page chrome** — header (`MON · WEEK 19` eyebrow + title + chevrons), subhead (segmented Day/Week/Month + live pill), stats strip (Scheduled / Done / Focus, tabular-nums values).
+2. **PoolStrip** (scope=`day`) — horizontal-scroll strip; pool cards (200px wide); dashed `+ Add` tile that swaps in the **inline compose card** (240px); compose captures title + duration only and `POST`s a `timebox` with `start_min = NULL`. Fresh state on the new card via `useFreshIds`.
+3. **Mobile timeline** — `.tbm-timeline` with 80px hour rows, dashed q1/q2/q3 gridlines, past-wash overlay, now-line with chip label. Reuses `lib/timeline.ts` math.
+4. **MobileBlock** — absolute positioning via `top` / `height` from `minutesToPx`. State variants `done` / `live` / `fresh`. Tap opens **Block detail sheet**.
+5. **FAB** — fixed bottom-right above tab bar; opens **QuickAdd sheet**.
+6. **QuickAdd sheet** — title input (`tbm-input`), duration chips, Day / Time / Tag / Notes field rows, sticky accent CTA. Submits via existing daily `POST` (with `start_min` if Time was set, else pool).
+7. **Schedule sheet** — opens on tap of a pool card. Recommended slot row (accent-bordered) + 3–4 alternatives + drag-hint footer + sticky `Schedule for X:XX pm` CTA. Pick → `PATCH /api/timeboxes/[id]` to set `start_min`. Sheet dismisses; the new block animates in via `useFreshIds` for ~2s.
+8. **Recommended slot finder** — `src/lib/scheduler.ts`. Pure fn over `(now, blocks, durationMin, cfg)` returning `{ recommended, alternatives[] }`. Tested in `tests/lib/scheduler.test.ts`.
+9. **BlockDetail sheet** — read-mostly fields (Time / Tag / Notes). If `live`: timer card with `Pause` / `+5 min` / `Done`; sticky `Mark complete` CTA. If not live: footer-row `Delete block` (left) / `Edit` (right) text links.
+10. **Pool→timeline drag** (secondary path) — long-press lifts the pool card; dnd-kit `TouchSensor` + `PointerSensor`; existing snap modifier; drop sets `start_min`. Conflict + `allowOverlap=false` → drop rejected with the same warn-coloured ghost as desktop.
+11. Wire and test the canonical 5-step capture-and-schedule flow E2E (Add tile → composer → fresh pool card → tap → schedule sheet → pick → fresh block on timeline).
+
+**End state:** Mobile Today is functionally complete; canonical capture-and-schedule flow tested end-to-end against `Timebox Mobile.html`.
+
+### Phase 11 — Mobile Week + Month (~3–5 days)
+
+1. **Week page** — header (`WEEK 19 · MAY 4 – 10`), subhead segmented (Week active), week strip (7 day pills with task pips, today filled `--ink`, weekend num faded).
+2. **PoolStrip** (scope=`week`) above the week-card list.
+3. **Week-card** rows — one per day, head with day-num / DOW / count, body with `.tbm-week-task` rows; dashed empty-state when zero tasks. Today's card gets accent border + 1px accent ring.
+4. **Pool→day drag** for Week — `weekly_task.day_of_week` mutation via existing `PATCH /api/weekly-tasks/[id]`.
+5. **Month page** — header (`MAY 2026`), subhead segmented (Month active), month-pool strip, vertical list of `.tbm-month-week` cards. Current week gets the accent ring.
+6. **Pool→week drag** for Month — `monthly_task.week_index` mutation via existing `PATCH /api/monthly-tasks/[id]`.
+7. **Subhead segmented control** — wired to NavLink so it mirrors the tab bar exactly.
+8. **QuickAdd in week/month scope** — composer captures into the active scope's pool only (no scheduling, per requirements §8.2 / §9.2). The QuickAdd sheet's Day/Time fields are hidden when `scope !== 'day'`.
+
+**End state:** All three planning views work on mobile; per-period pool isolation verified; no cross-promotion between scopes.
+
+### Phase 12 — Mobile Me + polish + verification (~3–5 days)
+
+1. **MePage** — Settings (Appearance, Timeline, Week & Calendar, Account) re-laid out for narrow viewport. Reuses `useSettings` and the existing `<ChangePasswordModal>` / `<DeleteAccountModal>` / export action — those modals get a mobile media query in `extensions.css` so they take the full sheet area at <540px.
+2. **Sheet drag-to-dismiss** — pointer-drag on `.tbm-sheet-handle`; threshold 40% of sheet height; spring-back if released earlier.
+3. **Touch-target audit** — every interactive element ≥44×44 logical px (visual 40px buttons get a `::before` 44px hit halo; 32px sheet-close + 32px slot-pick wrapped in a 44px hit area).
+4. **State animations** — pulsing dot on the live block (1s ease-in-out, opacity 1 → 0.4 → 1), fresh halo decay, completion check scale-in (~150ms).
+5. **Safe-area insets** — `env(safe-area-inset-bottom)` on tab bar (`52px + 10px` safe pad) and FAB (`bottom: calc(78px + env(safe-area-inset-bottom))`).
+6. **Themes × accents pass** — visual verification across 18 combinations on Today / Week / Month / Me.
+7. **Performance pass** — Chrome DevTools mobile emulator (iPhone 14 Pro, slow 4G): timeline TTI <2s, 60fps scroll on the timeline, no jank during sheet open/close.
+8. **Smoke test on a real device** — user runs this; deploy under same `*.pages.dev` URL; sign in on phone, run the 5-step flow, switch tabs, change theme.
+
+**End state:** Mobile parity with the design at the level desktop has parity now. Auth, settings, and all CRUD reuse the same code path; only shell + view chrome differ.
+
 ---
 
 ## Verification
@@ -343,10 +466,37 @@ End-to-end manual test plan after each phase. (Phase 1 verification details are 
 - Production URL works in fresh browser profile (no cached state).
 - Performance: timeline renders <1s on typical laptop (§12.1). Drag at 60fps. Day/week/month nav <500ms.
 
+**Phase 9**
+- Open the app at viewport ≤820px → mobile shell mounts; tab bar visible; Today / Week / Month / Me reachable.
+- `?shell=desktop` on a phone forces desktop shell; `?shell=mobile` on a wide window forces mobile shell. Removing the param reverts to media-query selection.
+- Auth pages render correctly at 393×852 (no horizontal scroll, inputs full-width).
+- Open and dismiss a `<BottomSheet>` via tap-scrim and via close button; theme + accent persist across the shell switch.
+
+**Phase 10**
+- 5-step flow on a phone-sized viewport: tap `+ Add` → composer focuses → enter title + pick 25m → Save → new pool card lands with `NEW` badge for ~2s → tap card → schedule sheet opens with a sensible recommended slot → pick recommended → sheet dismisses → block lands fresh on the timeline at the chosen time.
+- Tap a live block → BlockDetail opens with a running timer; tap **Done** → state flips to `completed`, sheet closes, timeline shows struck-through title + check.
+- FAB → QuickAdd → Save without setting Time → task lands in pool, not on timeline.
+- Long-press a pool card → drag it onto the timeline; release at 11:30 am → block snaps to 11:30; conflict against an existing 11:00–11:45 block rejects the drop when `allowOverlap=false`.
+- `lib/scheduler.ts` unit tests cover: empty day (recommended at `now` snapped up), full day (no recommended; alternatives empty), exact-fit gap, gap shorter than duration (skipped), `allowOverlap=true` (overlapping starts allowed).
+
+**Phase 11**
+- On Week, drag a pool card onto Wednesday → persists across navigation; pool card disappears.
+- On Month, drag a pool card onto Week 20's card → persists; current-week ring still visible on the active week.
+- Capture a task in Week's pool (QuickAdd, scope=week) → it lands in `weekly_task` with `day_of_week=NULL`, **not** in `timebox`. Same check for month.
+- Subhead segmented control: tap Week from Today → URL changes to `/week`, mobile Week page mounts; tab bar's active tab updates in lock step.
+
+**Phase 12**
+- `/me` (or `/settings`) on a phone: change theme, accent, and increment all persist via `PATCH /api/settings`; modals (change password, delete account) cover the viewport correctly.
+- Sheet drag-to-dismiss: drag handle down ~30% then release → sheet springs back. Drag past 40% → sheet animates out and `useSheet.close()` fires.
+- Tab bar sits above the iOS home indicator (test in iOS Safari with the URL bar collapsed; or DevTools' "Home indicator" emulation).
+- Cycle every theme × accent combo on Today and Week; no glitches; all text readable.
+- Real-device smoke: sign in, run the 5-step flow, mark a block done, switch to Week, drop a task on Friday, switch theme, sign out.
+
 **Unit tests** (`tests/lib/`, Vitest, on every commit):
 - `time.test.ts` — parity with `fmtTime`/`fmtTimeShort`/`fmtDur` against JSX values.
 - `timeline.test.ts` — snap rounds correctly at every increment; conflict detection covers full overlap, partial overlap, edge-touching (not a conflict).
 - `completion.test.ts` — state derivation honours override flag; flips correctly across now-boundary.
+- `scheduler.test.ts` — recommended-slot returns next free interval ≥ duration after `now`; alternatives don't overlap each other; respects `dayEnd` cap; honours `allowOverlap`.
 
 ---
 
@@ -354,8 +504,9 @@ End-to-end manual test plan after each phase. (Phase 1 verification details are 
 
 Sections that need re-interpretation since the spec was written for native Windows:
 
-- **§1.3 Target Platform** — "modern browser" instead of Windows 10/11. Target Chrome, Edge, Firefox, Safari latest. Optimised for desktop widths (≥1200px); mobile is v2.
+- **§1.3 Target Platform** — "modern browser" instead of Windows 10/11. Target Chrome, Edge, Firefox, Safari latest. Desktop shell optimised for ≥1200px (rail layout); **mobile shell** optimised for ≤820px (tab bar + sheets, Phase 9+). Tablets currently fall back to desktop.
 - **§6 Notifications (entire section)** — **dropped from v1** per user decision. §10.3 dropped too.
 - **§6.4 Background behaviour** — moot without notifications.
 - **§11.1 Local storage** — translated to "stored on the user's account, server-side in D1". Cross-device follows.
 - **§12.4 Security** — Argon2id; HTTPS via Cloudflare; HTTP-only Secure SameSite=Strict session cookies; D1 access only via Pages Functions runtime.
+- **§13 Out of scope** — "mobile or web companion apps" no longer applies after Phase 12 (mobile is a shell of the same web app, not a separate companion). Recurring tasks, calendar integration, multi-user, MFA/SSO, and time-tracking analytics remain out of scope.
