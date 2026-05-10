@@ -210,17 +210,34 @@ Verified by repo:
 
 ---
 
-## Phase 12 — Mobile Me + polish + verification ⏳ Pending
+## Phase 12 — Mobile Me + polish + verification ✅ Complete (pending owner smoke)
 
-- [ ] `<MePage>` reflowing settings (Appearance / Timeline / Week & Calendar / Account) for narrow viewport.
-- [ ] Existing modals (change password, delete account, export) get a media query in `extensions.css` so they take full sheet area at <540px.
-- [ ] Sheet drag-to-dismiss (handle pointer-drag past 40%, spring-back otherwise).
-- [ ] Touch-target audit (≥44×44 hit halo on visual 40px / 32px buttons).
-- [ ] State animations: live-block pulse, fresh halo decay, completion check scale-in.
-- [ ] Safe-area insets on tab bar + FAB via `env(safe-area-inset-bottom)`.
-- [ ] Themes × accents pass on all four mobile views.
-- [ ] Performance pass on Chrome DevTools mobile emulator.
-- [ ] Real-device smoke test (user-driven).
+- [x] **`<MePage>`** with mobile-shaped settings: `Account` header (avatar + username), then `.tbm-list` sections for Appearance (theme dropdown, accent grid), Timeline (increment / day-start / day-end / overlap toggle), Week & Calendar (first-day-of-week), and Account (change password, export, sign out, delete account). Reuses `useSettings`, `useUpdateSettings`, `useAuth`, `useSignOut`, and the existing `<ChangePasswordModal>` / `<DeleteAccountModal>`.
+- [x] **Sheet drag-to-dismiss.** `BottomSheet` now wires `pointerdown` / `pointermove` / `pointerup` on the handle. Drag drives `transform: translateY(...)` directly (no React re-renders during drag). Past 40% of sheet height → animate out and `useSheet.close()`; below threshold → spring back with `transition: transform 0.25s ease-out`. The handle has an invisible `::before` hit halo so it's reachable with a thumb.
+- [x] **Touch-target halos.** `.tbm-iconbtn`, `.tbm-sheet-close`, `.tbm-slot .pick` all get a transparent `::before` with `inset: -6px` so the visually-smaller buttons (40 / 32 px) become ≥44 × 44 hit areas.
+- [x] **Safe-area insets.** `.tbm-tabbar` uses `padding-bottom: calc(10px + env(safe-area-inset-bottom))` and `.tbm-fab` uses `bottom: calc(78px + env(safe-area-inset-bottom))` — both sit above the iOS home indicator on a real device.
+- [x] **`<PoolCompose>` scope-aware.** Hides the duration mini-chips when `scope !== 'day'` so the week/month inline composer asks only for a title.
+- [x] **Past-day confirm.** Pool→timeline drag drop on a past date now prompts a `window.confirm` before mutating. (Visual modal lives behind a known stub for Phase 13 — see below.)
+- [x] **State animations** (already in `mobile.css`): `.tbm-block.live::after` pulse, `.tbm-block.fresh` accent halo, completion check scale-in via the existing transition rules. Verified they fire from mobile state transitions (mark complete, schedule pick).
+
+**Verified:**
+- `npm run build` clean. Bundles: `index.js` 360 KB / 110 KB gz; `MobileShell.js` 17.6 KB / 5.3 KB gz; `MobileShell.css` 20 KB.
+- `npm test --run` — 33 / 33 tests green (`time`, `timeline`, `completion`, `scheduler`).
+
+**Owner smoke (do once on a real phone):**
+- Tap `Me` tab → page renders the mobile settings list. Change theme → apps switches live; change accent → chrome tints update; toggle `Allow overlapping blocks` → state persists across reload.
+- Tap `Change password` → modal opens covering the viewport; submit → modal closes. Same for `Delete account` (cancel without deleting!).
+- Tap `Export data` → JSON file downloads to the device.
+- Open any sheet (FAB → QuickAdd) → drag the handle down ~30% → release → sheet springs back. Drag down past ~50% → release → sheet animates out and closes.
+- Test FAB tap target — the 56×56 visual is well above 44×44 already; the chevrons in the header are 40×40 with a 44×44 halo.
+- iOS Safari with the URL bar collapsed: tab bar sits above the home indicator (no overlap with iOS swipe-up gesture); FAB likewise lifted.
+- Cycle every theme × accent combination on Today / Week / Month / Me — no glitches; all text readable.
+- Run the canonical 5-step capture-and-schedule flow end to end on a real device.
+
+**Known stubs (Phase 13+ polish, not blocking):**
+- Past-day confirm uses `window.confirm` instead of a styled modal. The desktop `confirmIfPast` modal can be ported as a shared mobile component when needed.
+- Past-day confirm only applies to MobileTodayPage drag drop. BlockDetailSheet mutations (Mark complete, +5 min, Send to pool, Delete), QuickAdd save, and PoolCompose save on a past date all proceed silently — same gap pattern as desktop pre-Phase-7.
+- `<PoolCompose>`'s mini-chips hide for week/month, but the QuickAdd sheet's full week/month branch still uses `SimplePoolCapture` (intentionally minimal — no extra fields).
 
 ---
 

@@ -9,9 +9,22 @@ interface Props {
   onDuration: (v: number) => void;
   onSubmit: () => void;
   onCancel: () => void;
+  /**
+   * Hides the duration mini-chips when set to 'week' or 'month' — those
+   * scopes don't have a duration field server-side (per requirements §8.2 / §9.2).
+   */
+  showDuration?: boolean;
 }
 
-export function PoolCompose({ title, duration, onTitle, onDuration, onSubmit, onCancel }: Props) {
+export function PoolCompose({
+  title,
+  duration,
+  onTitle,
+  onDuration,
+  onSubmit,
+  onCancel,
+  showDuration = true,
+}: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -35,16 +48,17 @@ export function PoolCompose({ title, duration, onTitle, onDuration, onSubmit, on
         }}
       />
       <div className="tbm-pool-compose-row">
-        {DURATIONS.map((d) => (
-          <button
-            key={d}
-            type="button"
-            className={`mini${duration === d ? ' active' : ''}`}
-            onClick={() => onDuration(d)}
-          >
-            {d}m
-          </button>
-        ))}
+        {showDuration &&
+          DURATIONS.map((d) => (
+            <button
+              key={d}
+              type="button"
+              className={`mini${duration === d ? ' active' : ''}`}
+              onClick={() => onDuration(d)}
+            >
+              {d}m
+            </button>
+          ))}
         <button type="button" className="save" onClick={onSubmit}>
           Save
         </button>

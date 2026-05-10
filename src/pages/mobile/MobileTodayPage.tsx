@@ -176,7 +176,14 @@ export function MobileTodayPage() {
     if (!cur || !g) return;
     if (e.over?.id !== 'timeline-drop') return;
     if (g.conflict) return;
-    if (isPastDate(date)) return; // mobile defers past-day confirm to Phase 12 polish
+    if (isPastDate(date)) {
+      const ok =
+        typeof window !== 'undefined' &&
+        window.confirm(
+          `"${cur.title}" is on a past day. Editing changes the historical record. Make this change?`,
+        );
+      if (!ok) return;
+    }
     update.mutate(
       { id: cur.id, patch: { startMin: g.startMin } },
       { onSuccess: () => markFresh(cur.id) },

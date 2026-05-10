@@ -225,6 +225,64 @@ body { font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; }
 }
 .tbm-detail-notes::placeholder { color: var(--ink-4); }
 
+/* Phase 12: handle drag-to-dismiss has a larger hit area than the visual
+   bar so it's reachable with a thumb. Halo is invisible — the visual stays
+   the design's 44×5 pill. */
+.tbm-sheet-handle {
+  cursor: grab;
+  touch-action: none;
+  position: relative;
+}
+.tbm-sheet-handle:active { cursor: grabbing; }
+.tbm-sheet-handle::before {
+  content: '';
+  position: absolute;
+  left: -50%; right: -50%;
+  top: -16px; bottom: -16px;
+}
+
+/* Phase 12: ≥44×44 touch halos for visually smaller buttons. The halo is
+   invisible (transparent ::before) and inherits the parent's pointer events. */
+.tbm-iconbtn, .tbm-sheet-close, .tbm-slot .pick {
+  position: relative;
+}
+.tbm-iconbtn::before,
+.tbm-sheet-close::before,
+.tbm-slot .pick::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+}
+
+/* Phase 12: safe-area insets for iOS home-indicator + Safari URL bar. */
+.tbm-tabbar {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
+.tbm-fab {
+  bottom: calc(78px + env(safe-area-inset-bottom));
+}
+
+/* MePage list controls. */
+.tbm-list-select {
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-family: var(--font-sans);
+}
+.tbm-list-action {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  border-top: 1px solid var(--line);
+}
+.tbm-list-action:first-child { border-top: 0; }
+
 /* Footer text-links inside sheets. */
 .tbm-text-link {
   background: transparent;

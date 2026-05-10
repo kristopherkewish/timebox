@@ -57,6 +57,7 @@ export function PoolStrip({ scope, tasks, onCreate, onTap, freshIds, dragKind }:
             onDuration={setDuration}
             onSubmit={submit}
             onCancel={reset}
+            showDuration={scope === 'day'}
           />
         ) : (
           <button
